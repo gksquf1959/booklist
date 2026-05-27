@@ -1,0 +1,24 @@
+{
+  "name": "To Read List",
+  "short_name": "To Read",
+  "description": "내 독서 목록 앱",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#EDE9F8",
+  "theme_color": "#7B5EA7",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "icon.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icon.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
