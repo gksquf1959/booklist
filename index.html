@@ -3602,6 +3602,11 @@
         hideRandomModal();
         showDetailScreen(book.title);
       };
+      document.getElementById('randomCardContent').style.cursor = 'pointer';
+      document.getElementById('randomCardContent').onclick = () => {
+        hideRandomModal();
+        showDetailScreen(book.title);
+      };
       
       document.getElementById('randomModal').classList.remove('hidden');
       history.pushState({ modal: 'random' }, '', location.href);
