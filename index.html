@@ -3572,8 +3572,8 @@
     let currentRandomBook = null;
 
     function showRandomCard() {
-      const unread = BOOKS.filter(b => b.status === '안읽음');
-      const pool = unread.length > 0 ? unread : BOOKS;
+     const unread = BOOKS.filter(b => b.status === '안읽음');
+      const pool = unread.length > 0 ? unread : BOOKS.filter(b => b.status !== '완독');
       const book = pool[Math.floor(Math.random() * pool.length)];
       currentRandomBook = book;
 
