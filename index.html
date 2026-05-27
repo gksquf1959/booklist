@@ -3576,6 +3576,21 @@
       };
       reader.readAsText(file);
     }
+    // ═══════════════════════════════════════════════════════
+    //  안드로이드 뒤로가기 버튼 처리
+    // ═══════════════════════════════════════════════════════
+    window.addEventListener('popstate', () => {
+      const detailVisible = document.getElementById('detailScreen').classList.contains('translate-y-0');
+      const addVisible    = document.getElementById('addScreen').classList.contains('translate-y-0');
+      if (detailVisible) {
+        showMainScreenFromDetail();
+        history.pushState(null, '', location.href);
+      } else if (addVisible) {
+        showMainScreen();
+        history.pushState(null, '', location.href);
+      }
+    });
+    history.pushState(null, '', location.href);
 
     // ═══════════════════════════════════════════════════════
     //  초기 렌더링
