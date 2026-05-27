@@ -27,7 +27,7 @@
     }
   </script>
   <style>
-    body { background-color: #d1d5db; font-family: 'Noto Sans KR', sans-serif; }
+    body { background-color: #7B5EA7; font-family: 'Noto Sans KR', sans-serif; margin: 0; padding: 0; }
     .touch-active:active { opacity: 0.65; transform: scale(0.97); }
     button { -webkit-tap-highlight-color: transparent; transition: opacity .1s, transform .1s, background .15s, color .15s; }
     button:active { opacity: 0.7; transform: scale(0.96); }
@@ -71,32 +71,14 @@
       width: 100%; max-width: 412px; padding: 28px 20px 48px;
     }
 
-    /* 하단 백업 버튼 */
-    .bottom-bar {
-      padding: 10px 20px 18px;
-      display: flex; justify-content: flex-start;
-      pointer-events: none;
-    }
-    .backup-btn {
-      pointer-events: all;
-      width: 40px; height: 40px;
-      border-radius: 50%;
-      background: rgba(123,94,167,0.13);
-      border: 1.5px solid #ddd6fe;
-      display: flex; align-items: center; justify-content: center;
-      font-size: 18px;
-      box-shadow: 0 2px 8px rgba(123,94,167,0.10);
-      cursor: pointer;
-      transition: background .15s, transform .1s;
-    }
-    .backup-btn:active { background: rgba(123,94,167,0.22); transform: scale(0.93); }
+
   </style>
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
 </head>
-<body class="min-h-screen flex items-start justify-center py-6">
+<body class="min-h-screen flex items-start justify-center">
 
   <div class="w-full max-w-[412px] mx-auto min-h-screen relative overflow-hidden"
-       style="background:#EDE9F8; border-radius:28px; box-shadow:0 8px 40px rgba(0,0,0,.18);">
+       style="background:#EDE9F8;">
 
     <!-- ===================== 메인 화면 ===================== -->
     <div id="mainScreen" class="flex flex-col h-screen">
@@ -108,9 +90,14 @@
       <div class="flex items-center justify-between px-5 pt-7 pb-4"
            style="background:#7B5EA7; border-radius:0 0 24px 24px;">
         <h1 class="text-white text-2xl font-bold tracking-tight">To Read List 📚</h1>
-        <button onclick="showAddScreen()"
-                class="w-10 h-10 rounded-full flex items-center justify-center text-2xl font-bold text-white shadow-md"
-                style="background:rgba(255,255,255,.22);">+</button>
+        <div class="flex items-center gap-2">
+          <button onclick="showBackupModal()"
+                  class="w-10 h-10 rounded-full flex items-center justify-center text-lg text-white shadow-md"
+                  style="background:rgba(255,255,255,.22);">💾</button>
+          <button onclick="showAddScreen()"
+                  class="w-10 h-10 rounded-full flex items-center justify-center text-2xl font-bold text-white shadow-md"
+                  style="background:rgba(255,255,255,.22);">+</button>
+        </div>
       </div>
 
       <!-- 검색 + 필터 -->
@@ -181,12 +168,7 @@
         <p class="text-sm">검색 결과가 없습니다.</p>
       </div>
 
-      <!-- 하단 백업 버튼 고정 -->
-      <div class="flex-shrink-0" style="background:#EDE9F8;">
-        <div class="bottom-bar">
-          <button class="backup-btn" onclick="showBackupModal()" title="백업">💾</button>
-        </div>
-      </div>
+
 
     </div>
     <!-- ==================== /메인 화면 ==================== -->
@@ -3084,18 +3066,9 @@
     "status": "안읽음"
   },
   {
-    "title": "언더그라운드 = Underground",
-    "library": "양천중앙도서관",
-    "callNo": "833.6-무292어",
-    "author": "무라카미 하루키",
-    "type": "비문학",
-    "genres": [],
-    "status": "안읽음"
-  },
-  {
-    "title": "언더그라운드. 2:, 약속된 장소에서",
-    "library": "양천중앙도서관",
-    "callNo": "833.6-무292어-2",
+    "title": "언더그라운드 1",
+    "library": "미감도서관",
+    "callNo": "833.6-무292ㅇ-1",
     "author": "무라카미 하루키",
     "type": "비문학",
     "genres": [],
@@ -3155,28 +3128,21 @@
     //  localStorage 연동
     // ═══════════════════════════════════════════════════════
     function loadBooks() {
-  const saved = localStorage.getItem('BOOKS');
-  if (saved) {
-    try {
-      const savedBooks = JSON.parse(saved);
-      const savedTitles = new Set(savedBooks.map(b => b.title));
-      const newBooks = DEFAULT_BOOKS.filter(b => !savedTitles.has(b.title));
-      if (newBooks.length > 0) {
-        const merged = [...savedBooks, ...newBooks];
-        localStorage.setItem('BOOKS', JSON.stringify(merged));
-        return merged;
+      const saved = localStorage.getItem('BOOKS');
+      if (saved) {
+        try { return JSON.parse(saved); }
+        catch(e) {}
       }
-      return savedBooks;
-    } catch(e) {}
-  }
-  const initial = DEFAULT_BOOKS.map(b => ({...b}));
-  localStorage.setItem('BOOKS', JSON.stringify(initial));
-  return initial;
-}
-function saveBooks() {
-  localStorage.setItem('BOOKS', JSON.stringify(BOOKS));
-}
-let BOOKS = loadBooks();
+      const initial = DEFAULT_BOOKS.map(b => ({...b}));
+      localStorage.setItem('BOOKS', JSON.stringify(initial));
+      return initial;
+    }
+
+    function saveBooks() {
+      localStorage.setItem('BOOKS', JSON.stringify(BOOKS));
+    }
+
+    let BOOKS = loadBooks();
 
     // ═══════════════════════════════════════════════════════
     //  필터 상태
