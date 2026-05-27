@@ -61,6 +61,18 @@
     #addTitle:focus::placeholder, #addCallNo:focus::placeholder,
     #detailTitle:focus::placeholder, #detailCallNo:focus::placeholder { color: transparent; }
 
+    /* 커스텀 스크롤바 */
+    #bookList::-webkit-scrollbar { width: 8px; }
+    #bookList::-webkit-scrollbar-track { background: transparent; }
+    #bookList::-webkit-scrollbar-thumb {
+      background: rgba(155, 119, 209, 0.35);
+      border-radius: 10px;
+    }
+    #bookList::-webkit-scrollbar-thumb:active {
+      background: rgba(123, 94, 167, 0.75);
+    }
+    #bookList { scrollbar-width: thin; scrollbar-color: rgba(155,119,209,0.35) transparent; }
+
     /* 백업 모달 */
     .modal-overlay {
       position: fixed; inset: 0; background: rgba(0,0,0,0.45);
@@ -150,6 +162,11 @@
             <option>한국문학</option>
           </select>
           <div class="flex gap-1 ml-auto">
+            <button class="fbtn" onclick="showRandomCard()" style="background:#7B5EA7; border-color:#7B5EA7; padding:5px 8px;">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/>
+              </svg>
+            </button>
             <button id="btnWandok"  class="fbtn" onclick="toggleStatus('완독')">완독</button>
             <button id="btnReading" class="fbtn" onclick="toggleStatus('읽는중')">읽는중</button>
             <button id="btnUnread"  class="fbtn" onclick="toggleStatus('안읽음')">안읽음</button>
@@ -159,12 +176,9 @@
 
       </div><!-- /상단 고정 영역 -->
 
-      <!-- 권수 표기 -->
-      <div id="bookCount" class="px-5 pb-1 text-right" style="font-size:10px; color:#7B5EA7; font-weight:600;"></div>
-
       <!-- 책 목록 -->
       <div id="bookList"
-           class="flex-1 overflow-y-auto no-scrollbar px-4 pb-2 flex flex-col gap-2 pt-1">
+           class="flex-1 overflow-y-auto px-4 pb-2 flex flex-col gap-2 pt-1">
       </div>
       <div id="emptyMsg" class="hidden flex-col items-center justify-center text-gray-400" style="flex:1;overflow-y:auto;">
         <p class="text-3xl mb-2">🔍</p>
@@ -344,6 +358,33 @@
         <div id="deleteContainer">
           <button onclick="confirmDeletePrompt()"
                   class="w-full py-4 rounded-2xl text-white text-xl font-bold shadow-lg tracking-wide bg-red-500 touch-active">삭제</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===================== 랜덤 카드 모달 ===================== -->
+    <div id="randomModal" class="hidden modal-overlay" onclick="hideRandomModal(event)">
+      <div class="modal-sheet" onclick="event.stopPropagation()">
+        <div class="flex items-center justify-between mb-4">
+          <h2 class="text-base font-bold text-gray-800">🎲 오늘 이 책 어때요?</h2>
+          <button onclick="showRandomCard()" class="text-xs font-semibold px-3 py-1 rounded-lg touch-active" style="background:#EDE9F8; color:#7B5EA7;">다시 뽑기</button>
+        </div>
+
+        <div id="randomCardContent" class="bg-[#EDE9F8] rounded-2xl p-4 flex flex-col gap-2 mb-6">
+          <p id="randomTitle" class="font-bold text-base text-gray-800 leading-snug"></p>
+          <p id="randomAuthor" class="text-xs text-gray-400"></p>
+          <p id="randomLibrary" class="text-xs text-gray-400"></p>
+          <p id="randomCallNo" class="text-xs text-gray-400"></p>
+          <div id="randomTags" class="flex flex-wrap gap-1 mt-1"></div>
+        </div>
+
+        <div class="flex gap-2">
+          <button onclick="goToLibraryFromRandom()" 
+                  class="flex-1 py-3 rounded-2xl text-sm font-bold touch-active"
+                  style="background:#EDE9F8; color:#7B5EA7; border:1.5px solid #ddd6fe;">📍 도서관 이동</button>
+          <button onclick="hideRandomModal()"
+                  class="flex-1 py-3 rounded-2xl text-white text-sm font-bold touch-active"
+                  style="background:#7B5EA7;">닫기</button>
         </div>
       </div>
     </div>
@@ -3238,13 +3279,6 @@
         if (F.status  && b.status  !== F.status)      return false;
         return true;
       });
-       const total = BOOKS.length;
-      const countEl = document.getElementById('bookCount');
-      if (F.search || F.library || F.type || F.genre || F.status) {
-        countEl.textContent = `검색 결과: ${result.length}권 / 총 ${total}권`;
-      } else {
-        countEl.textContent = `전체: ${total}권`;
-      }     
       renderBooks(result);
     }
 
@@ -3533,11 +3567,48 @@
     }
 
     // ═══════════════════════════════════════════════════════
+    //  랜덤 카드
+    // ═══════════════════════════════════════════════════════
+    let currentRandomBook = null;
+
+    function showRandomCard() {
+      const unread = BOOKS.filter(b => b.status === '안읽음');
+      const pool = unread.length > 0 ? unread : BOOKS;
+      const book = pool[Math.floor(Math.random() * pool.length)];
+      currentRandomBook = book;
+
+      document.getElementById('randomTitle').textContent = book.title;
+      document.getElementById('randomAuthor').textContent = book.author || '';
+      document.getElementById('randomLibrary').textContent = book.library;
+      document.getElementById('randomCallNo').textContent = book.callNo ? `[${book.callNo}]` : '';
+
+      const tagsList = [book.type === '소설' ? '#소설' : '#비문학', ...book.genres.map(g => '#' + g)];
+      document.getElementById('randomTags').innerHTML = tagsList.map(t =>
+        `<span class="text-[10px] font-semibold px-2 py-0.5 rounded-full text-white" style="background:#9B77D1;">${t}</span>`
+      ).join('');
+
+      document.getElementById('randomModal').classList.remove('hidden');
+      history.pushState({ modal: 'random' }, '', location.href);
+    }
+
+    function hideRandomModal(e) {
+      if (!e || e.target === document.getElementById('randomModal')) {
+        document.getElementById('randomModal').classList.add('hidden');
+      }
+    }
+
+    function goToLibraryFromRandom() {
+      const url = 'https://lib.yangcheon.or.kr/main/site/member/login.do?prepage=%2Fmain%2F';
+      window.open(url, '_blank');
+    }
+
+    // ═══════════════════════════════════════════════════════
     //  백업 모달
     // ═══════════════════════════════════════════════════════
     function showBackupModal() {
       document.getElementById('importResult').classList.add('hidden');
       document.getElementById('backupModal').classList.remove('hidden');
+      history.pushState({ modal: 'backup' }, '', location.href);
     }
 
     function hideBackupModal(e) {
@@ -3586,41 +3657,11 @@
       };
       reader.readAsText(file);
     }
-    // ═══════════════════════════════════════════════════════
-    //  안드로이드 뒤로가기 버튼 처리
-    // ═══════════════════════════════════════════════════════
-    let backPressedOnce = false;
-
-    window.addEventListener('popstate', () => {
-      const detailVisible = document.getElementById('detailScreen').classList.contains('translate-y-0');
-      const addVisible    = document.getElementById('addScreen').classList.contains('translate-y-0');
-
-      if (detailVisible) {
-        showMainScreenFromDetail();
-        history.pushState(null, '', location.href);
-        backPressedOnce = false;
-      } else if (addVisible) {
-        showMainScreen();
-        history.pushState(null, '', location.href);
-        backPressedOnce = false;
-      } else {
-        // 메인 화면에서 뒤로가기
-        if (backPressedOnce) {
-          // 두 번째 누르면 종료
-          history.back();
-        } else {
-          backPressedOnce = true;
-          history.pushState(null, '', location.href);
-          setTimeout(() => { backPressedOnce = false; }, 2000);
-        }
-      }
-    });
-    history.pushState(null, '', location.href);
 
     // ═══════════════════════════════════════════════════════
     //  초기 렌더링
     // ═══════════════════════════════════════════════════════
-const countEl = document.getElementById('bookCount');       countEl.textContent = `전체: ${BOOKS.length}권`;       renderBooks(BOOKS);
+    renderBooks(BOOKS);
   </script>
   <script>
     if ('serviceWorker' in navigator) {
