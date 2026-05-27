@@ -159,6 +159,9 @@
 
       </div><!-- /상단 고정 영역 -->
 
+      <!-- 권수 표기 -->
+      <div id="bookCount" class="px-4 pb-1 text-right" style="font-size:10px; color:#7B5EA7; font-weight:600;"></div>
+
       <!-- 책 목록 -->
       <div id="bookList"
            class="flex-1 overflow-y-auto no-scrollbar px-4 pb-2 flex flex-col gap-2 pt-1">
@@ -3235,6 +3238,13 @@
         if (F.status  && b.status  !== F.status)      return false;
         return true;
       });
+       const total = BOOKS.length;
+      const countEl = document.getElementById('bookCount');
+      if (F.search || F.library || F.type || F.genre || F.status) {
+        countEl.textContent = `검색 결과: ${result.length}권 / 총 ${total}권`;
+      } else {
+        countEl.textContent = `전체: ${total}권`;
+      }     
       renderBooks(result);
     }
 
