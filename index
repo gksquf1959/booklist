@@ -1,0 +1,3629 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="theme-color" content="#7B5EA7">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="To Read List">
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" href="icon.png">
+  <title>To Read List 📚</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            'p-main':  '#7B5EA7',
+            'p-light': '#EDE9F8',
+            'p-tag':   '#9B77D1',
+            'p-200':   '#ddd6fe',
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    body { background-color: #d1d5db; font-family: 'Noto Sans KR', sans-serif; }
+    .touch-active:active { opacity: 0.65; transform: scale(0.97); }
+    button { -webkit-tap-highlight-color: transparent; transition: opacity .1s, transform .1s, background .15s, color .15s; }
+    button:active { opacity: 0.7; transform: scale(0.96); }
+    .no-scrollbar::-webkit-scrollbar { display: none; }
+    .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    .book-checkbox {
+      width: 22px; height: 22px; min-width: 22px;
+      border-radius: 5px; border: 2px solid #9B77D1;
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer; transition: background .15s;
+    }
+    .book-checkbox.checked { background: #7B5EA7; border-color: #7B5EA7; }
+    select {
+      appearance: none; -webkit-appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24'%3E%3Cpath fill='%237B5EA7' d='M7 10l5 5 5-5z'/%3E%3C/svg%3E");
+      background-repeat: no-repeat; background-position: right 8px center; padding-right: 24px !important;
+    }
+    select:disabled {
+      background-color: #f3f4f6; color: #9ca3af; cursor: not-allowed; opacity: 0.6;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24'%3E%3Cpath fill='%239ca3af' d='M7 10l5 5 5-5z'/%3E%3C/svg%3E");
+    }
+    .input-card { background: white; border-radius: 20px; box-shadow: 0 4px 20px rgba(123,94,167,.10); }
+    .fbtn {
+      font-size: 11px; font-weight: 600;
+      padding: 5px 10px; border-radius: 10px;
+      border: 1.5px solid #ddd6fe;
+      background: white; color: #7B5EA7;
+      box-shadow: 0 1px 3px rgba(0,0,0,.06);
+    }
+    .fbtn.active { background: #7B5EA7; color: white; border-color: #7B5EA7; }
+    #addTitle:focus::placeholder, #addCallNo:focus::placeholder,
+    #detailTitle:focus::placeholder, #detailCallNo:focus::placeholder { color: transparent; }
+
+    /* 백업 모달 */
+    .modal-overlay {
+      position: fixed; inset: 0; background: rgba(0,0,0,0.45);
+      z-index: 200; display: flex; align-items: flex-end; justify-content: center;
+    }
+    .modal-sheet {
+      background: white; border-radius: 24px 24px 0 0;
+      width: 100%; max-width: 412px; padding: 28px 20px 48px;
+    }
+
+    /* 하단 백업 버튼 */
+    .bottom-bar {
+      padding: 10px 20px 18px;
+      display: flex; justify-content: flex-start;
+      pointer-events: none;
+    }
+    .backup-btn {
+      pointer-events: all;
+      width: 40px; height: 40px;
+      border-radius: 50%;
+      background: rgba(123,94,167,0.13);
+      border: 1.5px solid #ddd6fe;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 18px;
+      box-shadow: 0 2px 8px rgba(123,94,167,0.10);
+      cursor: pointer;
+      transition: background .15s, transform .1s;
+    }
+    .backup-btn:active { background: rgba(123,94,167,0.22); transform: scale(0.93); }
+  </style>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
+</head>
+<body class="min-h-screen flex items-start justify-center py-6">
+
+  <div class="w-full max-w-[412px] mx-auto min-h-screen relative overflow-hidden"
+       style="background:#EDE9F8; border-radius:28px; box-shadow:0 8px 40px rgba(0,0,0,.18);">
+
+    <!-- ===================== 메인 화면 ===================== -->
+    <div id="mainScreen" class="flex flex-col h-screen">
+
+      <!-- 상단 고정 영역 -->
+      <div class="flex-shrink-0" style="position:sticky;top:0;z-index:10;">
+
+      <!-- 상단 바 -->
+      <div class="flex items-center justify-between px-5 pt-7 pb-4"
+           style="background:#7B5EA7; border-radius:0 0 24px 24px;">
+        <h1 class="text-white text-2xl font-bold tracking-tight">To Read List 📚</h1>
+        <button onclick="showAddScreen()"
+                class="w-10 h-10 rounded-full flex items-center justify-center text-2xl font-bold text-white shadow-md"
+                style="background:rgba(255,255,255,.22);">+</button>
+      </div>
+
+      <!-- 검색 + 필터 -->
+      <div class="px-4 pt-4 pb-2 flex flex-col gap-2">
+        <div class="flex items-center gap-2 bg-white rounded-2xl px-4 py-2 shadow-sm">
+          <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="#9B77D1" stroke-width="2" viewBox="0 0 24 24">
+            <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+          </svg>
+          <input id="searchInput" type="text" placeholder="제목 또는 지은이 검색"
+                 class="flex-1 outline-none text-sm text-gray-600 bg-transparent placeholder-gray-400"
+                 oninput="applyFilters()" />
+          <button id="searchClear" onclick="clearSearch()"
+                  class="hidden text-gray-300 hover:text-gray-500 text-lg leading-none">✕</button>
+        </div>
+
+        <div class="flex items-center gap-2 flex-wrap">
+          <span class="text-xs font-bold text-p-main shrink-0">도서관</span>
+          <select id="librarySelect"
+                  class="text-xs font-medium border border-p-200 rounded-xl px-3 py-1.5 text-p-main bg-white shadow-sm focus:outline-none"
+                  onchange="applyFilters()">
+            <option value="">전체</option>
+            <option>방아다리문학도서관</option>
+            <option>양천중앙도서관</option>
+            <option>개울건강도서관</option>
+            <option>신월음악도서관</option>
+            <option>갈산도서관</option>
+            <option>해맞이역사도서관</option>
+            <option>영어특성화도서관</option>
+            <option>목마교육도서관</option>
+            <option>미감도서관</option>
+            <option>모새미작은도서관</option>
+            <option>목1동 도서방</option>
+            <option>신월3북카페</option>
+          </select>
+          <div class="flex gap-1 ml-auto">
+            <button id="btnSosol" class="fbtn" onclick="toggleType('소설')">소설</button>
+            <button id="btnBimun" class="fbtn" onclick="toggleType('비문학')">비문학</button>
+          </div>
+        </div>
+
+        <div class="flex items-center gap-2 flex-wrap">
+          <span class="text-xs font-bold text-p-main shrink-0">장르</span>
+          <select id="genreSelect" disabled
+                  class="text-xs font-medium border border-p-200 rounded-xl px-3 py-1.5 text-p-main bg-white shadow-sm focus:outline-none"
+                  onchange="applyFilters()">
+            <option value="">전체</option>
+            <option>SF</option>
+            <option>추리/스릴러</option>
+            <option>세계문학</option>
+            <option>한국문학</option>
+          </select>
+          <div class="flex gap-1 ml-auto">
+            <button id="btnWandok"  class="fbtn" onclick="toggleStatus('완독')">완독</button>
+            <button id="btnReading" class="fbtn" onclick="toggleStatus('읽는중')">읽는중</button>
+            <button id="btnUnread"  class="fbtn" onclick="toggleStatus('안읽음')">안읽음</button>
+          </div>
+        </div>
+      </div>
+
+      </div><!-- /상단 고정 영역 -->
+
+      <!-- 책 목록 -->
+      <div id="bookList"
+           class="flex-1 overflow-y-auto no-scrollbar px-4 pb-2 flex flex-col gap-2 pt-1">
+      </div>
+      <div id="emptyMsg" class="hidden flex-col items-center justify-center text-gray-400" style="flex:1;overflow-y:auto;">
+        <p class="text-3xl mb-2">🔍</p>
+        <p class="text-sm">검색 결과가 없습니다.</p>
+      </div>
+
+      <!-- 하단 백업 버튼 고정 -->
+      <div class="flex-shrink-0" style="background:#EDE9F8;">
+        <div class="bottom-bar">
+          <button class="backup-btn" onclick="showBackupModal()" title="백업">💾</button>
+        </div>
+      </div>
+
+    </div>
+    <!-- ==================== /메인 화면 ==================== -->
+
+
+    <!-- ===================== 입력 화면 ===================== -->
+    <div id="addScreen" class="absolute inset-0 bg-[#EDE9F8] z-50 transform translate-y-full transition-transform duration-300 ease-out flex flex-col overflow-y-auto no-scrollbar">
+      <div class="flex items-center gap-3 px-5 pt-7 pb-4"
+           style="background:#7B5EA7; border-radius:0 0 24px 24px;">
+        <button onclick="showMainScreen()"
+                class="w-9 h-9 flex items-center justify-center rounded-full"
+                style="background:rgba(255,255,255,.22);">
+          <svg class="w-5 h-5 text-white" fill="none" stroke="white" stroke-width="2.5" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/>
+          </svg>
+        </button>
+        <h1 class="text-white text-2xl font-bold tracking-tight">Read more? 📝</h1>
+      </div>
+
+      <div class="px-4 pt-5 pb-4">
+        <div class="input-card p-5 flex flex-col gap-5">
+          <div>
+            <p class="text-sm font-bold text-gray-700 mb-1">책 제목</p>
+            <input id="addTitle" type="text" placeholder="제목을 입력하세요"
+                   class="w-full text-sm text-gray-700 border-0 border-b border-gray-200 pb-2 outline-none bg-transparent placeholder-gray-400 focus:border-purple-400 transition-colors" />
+          </div>
+          <div>
+            <p class="text-sm font-bold text-gray-700 mb-2">구분</p>
+            <div class="flex gap-2">
+              <button id="addBtnSosol" class="flex-1 py-2 rounded-xl text-sm font-semibold border transition-all fbtn active"
+                      onclick="selectAddType('소설')">소설</button>
+              <button id="addBtnBimun" class="flex-1 py-2 rounded-xl text-sm font-semibold border transition-all fbtn"
+                      onclick="selectAddType('비문학')">비문학</button>
+            </div>
+          </div>
+          <div>
+            <p class="text-sm font-bold text-gray-700 mb-1">장르 선택</p>
+            <select id="addGenre"
+                    class="w-full text-sm text-gray-700 border border-gray-200 rounded-xl px-3 py-2.5 bg-white outline-none focus:border-purple-400 transition-colors">
+              <option value="">장르를 선택하세요</option>
+              <option>SF</option>
+              <option>추리/스릴러</option>
+              <option>세계문학</option>
+              <option>한국문학</option>
+            </select>
+          </div>
+          <div>
+            <p class="text-sm font-bold text-gray-700 mb-1">소장 도서관</p>
+            <select id="addLibrary" onchange="handleLibraryChange('addLibrary','addLibraryInput')"
+                    class="w-full text-sm text-gray-700 border border-gray-200 rounded-xl px-3 py-2.5 bg-white outline-none focus:border-purple-400 transition-colors">
+              <option value="">도서관을 선택하세요</option>
+              <option>방아다리문학도서관</option>
+              <option>양천중앙도서관</option>
+              <option>개울건강도서관</option>
+              <option>신월음악도서관</option>
+              <option>갈산도서관</option>
+              <option>해맞이역사도서관</option>
+              <option>영어특성화도서관</option>
+              <option>목마교육도서관</option>
+              <option>미감도서관</option>
+              <option>모새미작은도서관</option>
+              <option>목1동 도서방</option>
+              <option>신월3북카페</option>
+              <option value="__new__">+ 도서관 추가</option>
+            </select>
+            <input id="addLibraryInput" type="text" placeholder="도서관 이름을 입력하세요"
+                   class="hidden mt-2 w-full text-sm text-gray-700 border border-gray-200 rounded-xl px-3 py-2.5 bg-white outline-none focus:border-purple-400 transition-colors" />
+          </div>
+          <div>
+            <p class="text-sm font-bold text-gray-700 mb-1">위치 번호</p>
+            <input id="addCallNo" type="text" placeholder="예: 813.7-김63이"
+                   class="w-full text-sm text-gray-700 border-0 border-b border-gray-200 pb-2 outline-none bg-transparent placeholder-gray-400 focus:border-purple-400 transition-colors" />
+          </div>
+        </div>
+      </div>
+      <div class="px-4 pt-2 pb-8">
+        <button onclick="addBook()" class="w-full py-4 rounded-2xl text-white text-xl font-bold shadow-lg tracking-wide"
+                style="background:#7B5EA7;">Read!</button>
+      </div>
+    </div>
+
+    <!-- ===================== 상세/수정 화면 ===================== -->
+    <div id="detailScreen" class="absolute inset-0 bg-[#EDE9F8] z-50 transform translate-y-full transition-transform duration-300 ease-out flex flex-col overflow-y-auto no-scrollbar">
+      <div class="flex items-center gap-3 px-5 pt-7 pb-4"
+           style="background:#7B5EA7; border-radius:0 0 24px 24px;">
+        <button onclick="showMainScreenFromDetail()"
+                class="w-9 h-9 flex items-center justify-center rounded-full"
+                style="background:rgba(255,255,255,.22);">
+          <svg class="w-5 h-5 text-white" fill="none" stroke="white" stroke-width="2.5" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/>
+          </svg>
+        </button>
+        <h1 class="text-white text-2xl font-bold tracking-tight">Read more? 📝</h1>
+      </div>
+
+      <div class="px-4 pt-5 pb-4">
+        <div class="input-card p-5 flex flex-col gap-5">
+          <div>
+            <div class="flex items-center justify-between mb-1">
+              <p class="text-sm font-bold text-gray-700">책 제목</p>
+              <button id="editBtn" onclick="toggleEditMode()" class="text-xs font-semibold text-p-main bg-p-light px-2.5 py-1 rounded-lg touch-active">편집</button>
+            </div>
+            <input id="detailTitle" type="text" disabled
+                   class="w-full text-sm text-gray-700 border-0 border-b border-gray-200 pb-2 outline-none bg-transparent placeholder-gray-400 focus:border-purple-400 transition-colors" />
+          </div>
+          <div>
+            <p class="text-sm font-bold text-gray-700 mb-2">구분</p>
+            <div class="flex gap-2">
+              <button id="detailBtnSosol" class="flex-1 py-2 rounded-xl text-sm font-semibold border transition-all fbtn active pointer-events-none opacity-60"
+                      onclick="selectDetailType('소설')">소설</button>
+              <button id="detailBtnBimun" class="flex-1 py-2 rounded-xl text-sm font-semibold border transition-all fbtn pointer-events-none opacity-60"
+                      onclick="selectDetailType('비문학')">비문학</button>
+            </div>
+          </div>
+          <div>
+            <p class="text-sm font-bold text-gray-700 mb-1">장르 선택</p>
+            <select id="detailGenre" disabled
+                    class="w-full text-sm text-gray-700 border border-gray-200 rounded-xl px-3 py-2.5 bg-white outline-none focus:border-purple-400 transition-colors">
+              <option value="">장르를 선택하세요</option>
+              <option>SF</option>
+              <option>추리/스릴러</option>
+              <option>세계문학</option>
+              <option>한국문학</option>
+            </select>
+          </div>
+          <div>
+            <p class="text-sm font-bold text-gray-700 mb-1">소장 도서관</p>
+            <select id="detailLibrary" disabled onchange="handleLibraryChange('detailLibrary','detailLibraryInput')"
+                    class="w-full text-sm text-gray-700 border border-gray-200 rounded-xl px-3 py-2.5 bg-white outline-none focus:border-purple-400 transition-colors">
+              <option value="">도서관을 선택하세요</option>
+              <option>방아다리문학도서관</option>
+              <option>양천중앙도서관</option>
+              <option>개울건강도서관</option>
+              <option>신월음악도서관</option>
+              <option>갈산도서관</option>
+              <option>해맞이역사도서관</option>
+              <option>영어특성화도서관</option>
+              <option>목마교육도서관</option>
+              <option>미감도서관</option>
+              <option>모새미작은도서관</option>
+              <option>목1동 도서방</option>
+              <option>신월3북카페</option>
+              <option value="__new__">+ 도서관 추가</option>
+            </select>
+            <input id="detailLibraryInput" type="text" placeholder="도서관 이름을 입력하세요" disabled
+                   class="hidden mt-2 w-full text-sm text-gray-700 border border-gray-200 rounded-xl px-3 py-2.5 bg-white outline-none focus:border-purple-400 transition-colors" />
+          </div>
+          <div>
+            <p class="text-sm font-bold text-gray-700 mb-1">위치 번호</p>
+            <input id="detailCallNo" type="text" disabled
+                   class="w-full text-sm text-gray-700 border-0 border-b border-gray-200 pb-2 outline-none bg-transparent placeholder-gray-400 focus:border-purple-400 transition-colors" />
+          </div>
+          <div>
+            <p class="text-sm font-bold text-gray-700 mb-2">독서 상태</p>
+            <div class="flex gap-2">
+              <button id="detailBtnUnread"   class="flex-1 py-2 rounded-xl text-sm font-semibold border transition-all fbtn active pointer-events-none opacity-60"
+                      onclick="selectDetailStatus('안읽음')">안 읽음</button>
+              <button id="detailBtnReading"  class="flex-1 py-2 rounded-xl text-sm font-semibold border transition-all fbtn pointer-events-none opacity-60"
+                      onclick="selectDetailStatus('읽는중')">읽는 중</button>
+              <button id="detailBtnFinished" class="flex-1 py-2 rounded-xl text-sm font-semibold border transition-all fbtn pointer-events-none opacity-60"
+                      onclick="selectDetailStatus('완독')">완독</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="px-4 pt-2 flex flex-col gap-3 pb-8">
+        <button id="detailSaveBtn" onclick="saveBook()" disabled
+                class="w-full py-4 rounded-2xl text-white text-xl font-bold shadow-lg tracking-wide bg-gray-400 opacity-60 cursor-not-allowed touch-active">수정 완료</button>
+        <div id="deleteContainer">
+          <button onclick="confirmDeletePrompt()"
+                  class="w-full py-4 rounded-2xl text-white text-xl font-bold shadow-lg tracking-wide bg-red-500 touch-active">삭제</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===================== 백업 모달 ===================== -->
+    <div id="backupModal" class="hidden modal-overlay" onclick="hideBackupModal(event)">
+      <div class="modal-sheet" onclick="event.stopPropagation()">
+        <div class="flex items-center justify-between mb-6">
+          <h2 class="text-lg font-bold text-gray-800">💾 데이터 백업</h2>
+          <button onclick="hideBackupModal()" class="text-gray-400 text-xl leading-none">✕</button>
+        </div>
+
+        <p class="text-sm text-gray-500 mb-6 leading-relaxed">
+          현재 독서 상태(완독, 읽는중 등)가 저장된<br>
+          JSON 파일을 내보내거나 불러올 수 있어요.
+        </p>
+
+        <div class="flex flex-col gap-3">
+          <button onclick="exportBackup()"
+                  class="w-full py-4 rounded-2xl text-white text-base font-bold shadow-md touch-active"
+                  style="background:#7B5EA7;">
+            📤 내보내기 (JSON 저장)
+          </button>
+          <label class="w-full py-4 rounded-2xl text-base font-bold shadow-md touch-active text-center cursor-pointer"
+                 style="background:#EDE9F8; color:#7B5EA7; border: 1.5px solid #ddd6fe;">
+            📥 불러오기 (JSON 복구)
+            <input type="file" accept=".json" class="hidden" onchange="importBackup(event)">
+          </label>
+        </div>
+
+        <p id="importResult" class="hidden text-center text-sm font-semibold mt-4"></p>
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    // ═══════════════════════════════════════════════════════
+    //  마스터 데이터 (251권 하드코딩)
+    // ═══════════════════════════════════════════════════════
+    const DEFAULT_BOOKS = [
+  {
+    "title": "오벨리스크의 문",
+    "library": "방아다리문학도서관",
+    "callNo": "843-제38ㅂ-2",
+    "author": "N. K. 제미신",
+    "type": "소설",
+    "genres": [
+      "SF",
+      "세계문학"
+    ],
+    "status": "안읽음"
+  },
+  {
+    "title": "석조 하늘",
+    "library": "방아다리문학도서관",
+    "callNo": "843-제38ㅂ-3",
+    "author": "N.K. 제미신",
+    "type": "소설",
+    "genres": [
+      "SF",
+      "세계문학"
+    ],
+    "status": "안읽음"
+  },
+  {
+    "title": "다섯 번째 계절",
+    "library": "방아다리문학도서관",
+    "callNo": "843-제38ㅂ-1",
+    "author": "N.K. 제미신",
+    "type": "소설",
+    "genres": [
+      "SF",
+      "세계문학"
+    ],
+    "status": "안읽음"
+  },
+  {
+    "title": "앨리스 죽이기",
+    "library": "방아다리문학도서관",
+    "callNo": "833.6-고42ㅇ",
+    "author": "고바야시 야스미",
+    "type": "소설",
+    "genres": [
+      "추리/스릴러",
+      "세계문학"
+    ],
+    "status": "안읽음"
+  },
+  {
+    "title": "파쇄 : 일단 마음먹고 칼을 집었으면",
+    "library": "방아다리문학도서관",
+    "callNo": "813.7-구44파",
+    "author": "구병모",
+    "type": "소설",
+    "genres": [
+      "한국문학"
+    ],
+    "status": "안읽음"
+  },
+  {
+    "title": "파과 : 구병모 장편소설",
+    "library": "방아다리문학도서관",
+    "callNo": "813.7-구44ㅍ",
+    "author": "구병모",
+    "type": "소설",
+    "genres": [
+      "한국문학"
+    ],
+    "status": "안읽음"
+  },
+  {
+    "title": "쿼런틴",
+    "library": "방아다리문학도서관",
+    "callNo": "843-이14ㅋ",
+    "author": "그렉 이건",
+    "type": "소설",
+    "genres": [
+      "SF",
+      "세계문학"
+    ],
+    "status": "안읽음"
+  },
+  {
+    "title": "매일 쓸 것, 뭐라도 쓸 것 : 금정연 일기",
+    "library": "방아다리문학도서관",
+    "callNo": "816.7-금74ㅁ",
+    "author": "금정연",
+    "type": "비문학",
+    "genres": [],
+    "status": "안읽음"
+  },
+  {
+    "title": "벨아미",
+    "library": "방아다리문학도서관",
+    "callNo": "808-세14ㅁ-223",
+    "author": "기 드 모파상",
+    "type": "소설",
+    "genres": [
+      "세계문학"
+    ],
+    "status": "안읽음"
+  },
+  {
+    "title": "이중 하나는 거짓말 : 김애란 장편소설",
+    "library": "방아다리문학도서관",
+    "callNo": "813.7-김63이",
+    "author": "김애란",
+    "type": "소설",
+    "genres": [
+      "한국문학"
+    ],
+    "status": "안읽음"
+  },
+  {
+    "title": "녹즙 배달원 강정민 : 김현진 장편소설",
+    "library": "방아다리문학도서관",
+    "callNo": "813.7-김94노",
+    "author": "김현진",
+    "type": "소설",
+    "genres": [
+      "한국문학"
+    ],
+    "status": "안읽음"
+  },
+  {
+    "title": "공룡의 이동 경로",
+    "library": "방아다리문학도서관",
+    "callNo": "813.7-김95ㄱ",
+    "author": "김화진",
+    "type": "소설",
+    "genres": [
+      "한국문학"
+    ],
+    "status": "안읽음"
+  },
+  {
+    "title": "메리 크리스하우스 : 김효인 장편소설",
+    "library": "방아다리문학도서관",
+    "callNo": "813.7-김95메",
+    "author": "김효인",
+    "type": "소설",
+    "genres": [
+      "한국문학"
+    ],
+    "status": "안읽음"
+  },
+  {
+    "title": "언디바이디드 : 온전한 존재",
+    "library": "방아다리문학도서관",
+    "callNo": "843-셔57ㅇ-4",
+    "author": "닐 셔스터먼",
+    "type": "소설",
+    "genres": [
+      "SF",
+      "세계문학"
+    ],
+    "status": "안읽음"
+  },
+  {
+    "title": "언솔드 : 흩어진 조각들",
+    "library": "방아다리문학도서관",
+    "callNo": "843-셔57ㅇ-3",
+    "author": "닐 셔스터먼",
+    "type": "소설",
+    "genres": [
+      "SF",
+      "세계문학"
+    ],
+    "status": "안읽음"
+  },
+  {
+    "title": "언홀리 : 무단이탈자의 묘지",
+    "library": "방아다리문학도서관",
+    "callNo": "843-셔57ㅇ-2",
+    "author": "닐 셔스터먼",
+    "type": "소설",
+    "genres": [
+      "SF",
+      "세계문학"
+    ],
+    "status": "안읽음"
+  },
+  {
+    "title": "언와인드 : 하비스트 캠프의 도망자",
+    "library": "방아다리문학도서관",
+    "callNo": "843-셔57ㅇ",
+    "author": "닐 셔스터먼",
+    "type": "소설",
+    "genres": [
+      "SF",
+      "세계문학"
+    ],
+    "status": "안읽음"
+  },
+  {
+    "title": "선더헤드",
+    "library": "방아다리문학도서관",
+    "callNo": "843-셔57ㅅ-2",
+    "author": "닐 셔스터먼",
+    "type": "소설",
+    "genres": [
+      "SF",
+      "세계문학"
+    ],
+    "status": "안읽음"
+  },
+  {
+    "title": "종소리",
+    "library": "방아다리문학도서관",
+    "callNo": "843-셔57ㅅ-3",
+    "author": "닐 셔스터먼",
+    "type": "소설",
+    "genres": [
+      "SF",
+      "세계문학"
+    ],
+    "status": "안읽음"
+  },
+  {
+    "title": "수확자",
+    "library": "방아다리문학도서관",
+    "callNo": "843-셔57ㅅ-1",
+    "author": "닐 셔스터먼",
+    "type": "소설",
+    "genres": [
+      "SF",
+      "세계문학"
+    ],
+    "status": "안읽음"
+  },
+  {
+    "title": "제노사이드",
+    "library": "방아다리문학도서관",
+    "callNo": "833.6-다872ㅈ",
+    "author": "다카노 가즈아키",
+    "type": "소설",
+    "genres": [
+      "추리/스릴러",
+      "세계문학"
+    ],
+    "status": "안읽음"
+  },
+  {
+    "title": "13계단",
+    "library": "방아다리문학도서관",
+    "callNo": "808.3-밀38ㅎ-29",
+    "author": "다카노 가즈아키",
+    "type": "소설",
+    "genres": [
+      "추리/스릴러",
+      "세계문학"
+    ],
+    "status": "안읽음"
+  },
+  {
+    "title": "다섯째 아이",
+    "library": "방아다리문학도서관",
+    "callNo": "808-세14ㅁ-27",
+    "author": "도리스 레싱",
+    "type": "소설",
+    "genres": [
+      "세계문학"
+    ],
+    "status": "안읽음"
+  },
+  {
+    "title": "카라마조프가의 형제들 2",
+    "library": "방아다리문학도서관",
+    "callNo": "808-세14ㅁ-155",
+    "author": "도스토예프스키",
+    "type": "소설",
+    "genres": [
+      "세계문학"
+    ],
+    "status": "안읽음"
+  },
+  {
+    "title": "카라마조프가의 형제들 3",
+    "library": "방아다리문학도서관",
+    "callNo": "808-세14ㅁ-156",
+    "author": "도스토예프스키",
+    "type": "소설",
+    "genres": [
+      "세계문학"
+    ],
+    "status": "안읽음"
+  },
+  {
+    "title": "화씨 451",
+    "library": "방아다리문학도서관",
+    "callNo": "843-브293ㅎ",
+    "author": "레이 브래드버리",
+    "type": "소설",
+    "genres": [
+      "SF",
+      "세계문학"
+    ],
+    "status": "안읽음"
+  },
+  {
+    "title": "대성당",
+    "library": "방아다리문학도서관",
+    "callNo": "808-세14마-119",
+    "author": "레이먼드 카버",
+    "type": "소설",
+    "genres": [
+      "세계문학"
+    ],
+    "status": "안읽음"
+  },
+  {
+    "title": "달콤한 노래",
+    "library": "방아다리문학도서관",
+    "callNo": "863-슬298ㄷ",
+    "author": "레일라 슬리마니",
+    "type": "소설",
+    "genres": [
+      "세계문학"
+    ],
+    "status": "안읽음"
+  },
+  {
+    "title": "삶은 여전히 빛난다",
+    "library": "방아다리문학도서관",
+    "callNo": "104-드48ㅅ",
+    "author": "로랑스 드빌레르",
+    "type": "비문학",
+    "genres": [],
+    "status": "안읽음"
+  },
+  {
+    "title": "숲의 신",
+    "library": "방아다리문학도서관",
+    "callNo": "843-무64ㅅ",
+    "author": "리즈 무어",
+    "type": "소설",
+    "genres": [
+      "추리/스릴러",
+      "세계문학"
+    ],
+    "status": "안읽음"
+  },
+  {
+    "title": "이기적 유전자",
+    "library": "방아다리문학도서관",
+    "callNo": "491.51-도878ㅇ",
+    "author": "리처드 도킨스",
+    "type": "비문학",
+    "genres": [],
+    "status": "안읽음"
+  },
+  {
+    "title": "홍수의 해",
+    "library": "방아다리문학도서관",
+    "callNo": "843-애887ㅁ-2",
+    "author": "마거릿 애트우드",
+    "type": "소설",
+    "genres": [
+      "SF",
+      "세계문학"
+    ],
+    "status": "안읽음"
+  },
+  {
+    "title": "미친 아담",
+    "library": "방아다리문학도서관",
+    "callNo": "843-애887ㅁ-3",
+    "author": "마거릿 애트우드",
+    "type": "소설",
+    "genres": [
+      "SF",
+      "세계문학"
+    ],
+    "status": "안읽음"
+  },
+  {
+    "title": "오릭스와 크레이크",
+    "library": "방아다리문학도서관",
+    "callNo": "843-애887ㅁ-1",
+    "author": "마거릿 애트우드",
+    "type": "소설",
+    "genres": [
+      "SF",
+      "세계문학"
+    ],
+    "status": "안읽음"
+  },
+  {
+    "title": "아직 오지 않은 소설가에게",
+    "library": "방아다리문학도서관",
+    "callNo": "802.3-마296ㅇ",
+    "author": "마루야마 겐지",
+    "type": "비문학",
+    "genres": [],
+    "status": "안읽음"
+  },
+  {
+    "title": "로재나 1",
+    "library": "방아다리문학도서관",
+    "callNo": "859.7-셰42ㅁ-1",
+    "author": "마이 셰발",
+    "type": "소설",
+    "genres": [
+      "추리/스릴러",
+      "세계문학"
+    ],
+    "status": "안읽음"
+  },
+  {
+    "title": "더 좋은 삶을 위한 철학",
+    "library": "방아다리문학도서관",
+    "callNo": "109-슈64ㄷ",
+    "author": "마이클 슈어",
+    "type": "비문학",
+    "genres": [],
+    "status": "안읽음"
+  },
+  {
+    "title": "스패로",
+    "library": "방아다리문학도서관",
+    "callNo": "843-러54ㅅ",
+    "author": "메리 도리아 러셀",
+    "type": "소설",
+    "genres": [
+      "SF",
+      "세계문학"
+    ],
+    "status": "안읽음"
+  },
+  {
+    "title": "모국어는 차라리 침묵",
+    "library": "방아다리문학도서관",
+    "callNo": "814.7-목74ㅁ",
+    "author": "목정원",
+    "type": "비문학",
+    "genres": [],
+    "status": "안읽음"
+  },
+  {
+    "title": "먼 북소리",
+    "library": "방아다리문학도서관",
+    "callNo": "836-무292ㅁ",
+    "author": "무라카미 하루키",
+    "type": "비문학",
+    "genres": [],
+    "status": "안읽음"
+  },
+  {
+    "title": "모방범 1",
+    "library": "방아다리문학도서관",
+    "callNo": "833.6-미63ㅁ-1",
+    "author": "미야베 미유키",
+    "type": "소설",
+    "genres": [
+      "추리/스릴러",
+      "세계문학"
+    ],
+    "status": "안읽음"
+  },
+  {
+    "title": "일본산고",
+    "library": "방아다리문학도서관",
+    "callNo": "814.6-박14ㅇ",
+    "author": "박경리",
+    "type": "비문학",
+    "genres": [],
+    "status": "안읽음"
+  },
+  {
+    "title": "사는 게 힘드냐고 니체가 물었다",
+    "library": "방아다리문학도서관",
+    "callNo": "165.77-박82ㅊ",
+    "author": "박찬국",
+    "type": "비문학",
+    "genres": [],
+    "status": "안읽음"
+  },
+  {
+    "title": "살:",
+    "library": "방아다리문학도서관",
+    "callNo": "813.7-박93ㅅ",
+    "author": "박해로",
+    "type": "소설",
+    "genres": [
+      "한국문학"
+    ],
+    "status": "안읽음"
+  },
+  {
+    "title": "오컬트 포크 호러",
+    "library": "방아다리문학도서관",
+    "callNo": "813.7-박93오",
+    "author": "박해로",
+    "type": "소설",
+    "genres": [
+      "한국문학"
+    ],
+    "status": "안읽음"
+  },
+  {
+    "title": "여름의 빌라",
+    "library": "방아다리문학도서관",
+    "callNo": "813.7-백56ㅇ",
+    "author": "백수린",
+    "type": "소설",
+    "genres": [
+      "한국문학"
+    ],
+    "status": "안읽음"
+  },
+  {
+    "title": "봄밤의 모든 것",
+    "library": "방아다리문학도서관",
+    "callNo": "813.7-백56ㅂ",
+    "author": "백수린",
+    "type": "소설",
+    "genres": [
+      "한국문학"
+    ],
+    "status": "안읽음"
+  },
+  {
+    "title": "눈부신 안부",
+    "library": "방아다리문학도서관",
+    "callNo": "813.7-백56ㄴ",
+    "author": "백수린",
+    "type": "소설",
+    "genres": [
+      "한국문학"
+    ],
+    "status": "안읽음"
+  },
+  {
+    "title": "너무 시끄러운 고독",
+    "library": "방아다리문학도서관",
+    "callNo": "892.96-흐292ㄴ",
+    "author": "보후밀 흐라발",
+    "type": "소설",
+    "genres": [
+      "세계문학"
+    ],
+    "status": "안읽음"
+  },
+  {
+    "title": "위대한 앰버슨가",
+    "library": "방아다리문학도서관",
+    "callNo": "843-타878ㅇ",
+    "author": "부스 타킹턴",
+    "type": "소설",
+    "genres": [
+      "세계문학"
+    ],
+    "status": "안읽음"
+  },
+  {
+    "title": "니체의 자존감 수업",
+    "library": "방아다리문학도서관",
+    "callNo": "165.77-사68ㄴ",
+    "author": "사이토 다카시",
+    "type": "비문학",
+    "genres": [],
+    "status": "안읽음"
+  },
+  {
+    "title": "시점의 힘",
+    "library": "방아다리문학도서관",
+    "callNo": "802-거57ㅅ",
+    "author": "샌드라 거스",
+    "type": "비문학",
+    "genres": [],
+    "status": "안읽음"
+  },
+  {
+    "title": "첫 문장의 힘",
+    "library": "방아다리문학도서관",
+    "callNo": "802-거57ㅊ",
+    "author": "샌드라 거스",
+    "type": "비문학",
+    "genres": [],
+    "status": "안읽음"
+  },
+  {
+    "title": "묘사의 힘",
+    "library": "방아다리문학도서관",
+    "callNo": "802-거57ㅁ",
+    "author": "샌드라 거스",
+    "type": "비문학",
+    "genres": [],
+    "status": "안읽음"
+  },
+  {
+    "title": "궤도",
+    "library": "방아다리문학도서관",
+    "callNo": "843-하48ㄱ",
+    "author": "서맨사 하비",
+    "type": "비문학",
+    "genres": [],
+    "status": "안읽음"
+  },
+  {
+    "title": "어셴든, 영국 정보부 요원",
+    "library": "방아다리문학도서관",
+    "callNo": "808.9-열298ㅇ-251",
+    "author": "서머싯 몸",
+    "type": "소설",
+    "genres": [
+      "추리/스릴러",
+      "세계문학"
+    ],
+    "status": "안읽음"
+  },
+  {
+    "title": "혼모노",
+    "library": "방아다리문학도서관",
+    "callNo": "813.7-성93ㅎ",
+    "author": "성해나",
+    "type": "소설",
+    "genres": [
+      "한국문학"
+    ],
+    "status": "안읽음"
+  },
+  {
+    "title": "핑거스미스",
+    "library": "방아다리문학도서관",
+    "callNo": "843.6-워884ㅍ",
+    "author": "세라 워터스",
+    "type": "소설",
+    "genres": [
+      "추리/스릴러",
+      "세계문학"
+    ],
+    "status": "안읽음"
+  },
+  {
+    "title": "괴테는 모든 것을 말했다",
+    "library": "방아다리문학도서관",
+    "callNo": "833.6-스77ㄱ",
+    "author": "스즈키 유이",
+    "type": "비문학",
+    "genres": [],
+    "status": "안읽음"
+  },
+  {
+    "title": "유혹하는 글쓰기",
+    "library": "방아다리문학도서관",
+    "callNo": "802-킹58ㅇ",
+    "author": "스티븐 킹",
+    "type": "비문학",
+    "genres": [],
+    "status": "안읽음"
+  },
+  {
+    "title": "인생의 역사",
+    "library": "방아다리문학도서관",
+    "callNo": "814.7-신94ㅇ",
+    "author": "신형철",
+    "type": "비문학",
+    "genres": [],
+    "status": "안읽음"
+  },
+  {
+    "title": "작은 불씨는 어디에나",
+    "library": "방아다리문학도서관",
+    "callNo": "843-잉58ㅈ",
+    "author": "실레스트 잉",
+    "type": "소설",
+    "genres": [
+      "세계문학"
+    ],
+    "status": "안읽음"
+  },
+  {
+    "title": "블랙박스",
+    "library": "방아다리문학도서관",
+    "callNo": "808-세14ㅁ-423",
+    "author": "아모스 오즈",
+    "type": "소설",
+    "genres": [
+      "세계문학"
+    ],
+    "status": "안읽음"
+  },
+  {
+    "title": "라마와의 랑데부",
+    "library": "방아다리문학도서관",
+    "callNo": "843.5-클292ㄹ",
+    "author": "아서 C. 클라크",
+    "type": "소설",
+    "genres": [
+      "SF",
+      "세계문학"
+    ],
+    "status": "안읽음"
+  },
+  {
+    "title": "시소 : 2022 선정 작품집",
+    "library": "방아다리문학도서관",
+    "callNo": "810.82-시55ㅈ-1",
+    "author": "안미옥 외",
+    "type": "소설",
+    "genres": [
+      "한국문학"
+    ],
+    "status": "안읽음"
+  },
+  {
+    "title": "체호프 단편선",
+    "library": "방아다리문학도서관",
+    "callNo": "808-세14ㅁ-70",
+    "author": "안톤 체호프",
+    "type": "소설",
+    "genres": [
+      "세계문학"
+    ],
+    "status": "안읽음"
+  },
+  {
+    "title": "불안",
+    "library": "방아다리문학도서관",
+    "callNo": "332.6-보835부",
+    "author": "알랭 드 보통",
+    "type": "비문학",
+    "genres": [],
+    "status": "안읽음"
+  },
+  {
+    "title": "좁은 문·전원교향곡·배덕자",
+    "library": "방아다리문학도서관",
+    "callNo": "808-세14ㅁ-336",
+    "author": "앙드레 지드",
+    "type": "소설",
+    "genres": [
+      "세계문학"
+    ],
+    "status": "안읽음"
+  },
+  {
+    "title": "와일드펠 저택의 여인",
+    "library": "방아다리문학도서관",
+    "callNo": "843-브295ㅇ",
+    "author": "앤 브론테",
+    "type": "소설",
+    "genres": [
+      "세계문학"
+    ],
+    "status": "안읽음"
+  },
+  {
+    "title": "클라우드 쿠쿠 랜드",
+    "library": "방아다리문학도서관",
+    "callNo": "843-도64ㅋ",
+    "author": "앤서니 도어",
+    "type": "소설",
+    "genres": [
+      "세계문학"
+    ],
+    "status": "안읽음"
+  },
+  {
+    "title": "맥파이 살인 사건",
+    "library": "방아다리문학도서관",
+    "callNo": "843-호295ㅁ",
+    "author": "앤서니 호로비츠",
+    "type": "소설",
+    "genres": [
+      "추리/스릴러",
+      "세계문학"
+    ],
+    "status": "안읽음"
+  },
+  {
+    "title": "그림 동화 2",
+    "library": "방아다리문학도서관",
+    "callNo": "853-그298ㄱ-2",
+    "author": "야코프 그림",
+    "type": "소설",
+    "genres": [
+      "세계문학"
+    ],
+    "status": "안읽음"
+  },
+  {
+    "title": "그림 동화 1",
+    "library": "방아다리문학도서관",
+    "callNo": "853-그298ㄱ-1",
+    "author": "야코프 그림",
+    "type": "소설",
+    "genres": [
+      "세계문학"
+    ],
+    "status": "안읽음"
+  },
+  {
+    "title": "나는 소망한다 내게 금지된 것을",
+    "library": "방아다리문학도서관",
+    "callNo": "813.6-양16ㄴ",
+    "author": "양귀자",
+    "type": "소설",
+    "genres": [
+      "한국문학"
+    ],
+    "status": "안읽음"
+  },
+  {
+    "title": "곰브리치 세계사",
+    "library": "방아다리문학도서관",
+    "callNo": "청 909-곰47ㄱ",
+    "author": "에른스트 H. 곰브리치",
+    "type": "비문학",
+    "genres": [],
+    "status": "안읽음"
+  },
+  {
+    "title": "오스카 와일드 작품선",
+    "library": "방아다리문학도서관",
+    "callNo": "808-세14ㅁ-222",
+    "author": "오스카 와일드",
+    "type": "소설",
+    "genres": [
+      "세계문학"
+    ],
+    "status": "안읽음"
+  },
+  {
+    "title": "블러드차일드",
+    "library": "방아다리문학도서관",
+    "callNo": "843-버887ㅂ",
+    "author": "옥타비아 버틀러",
+    "type": "소설",
+    "genres": [
+      "SF",
+      "세계문학"
+    ],
+    "status": "안읽음"
+  },
+  {
+    "title": "꿀벌과 천둥",
+    "library": "방아다리문학도서관",
+    "callNo": "833.6-온22ㄲ",
+    "author": "온다 리쿠",
+    "type": "소설",
+    "genres": [
+      "세계문학"
+    ],
+    "status": "안읽음"
+  },
+  {
+    "title": "인사이트 밀",
+    "library": "방아다리문학도서관",
+    "callNo": "833.6-요194이",
+    "author": "요네자와 호노부",
+    "type": "소설",
+    "genres": [
+      "추리/스릴러",
+      "세계문학"
+    ],
+    "status": "안읽음"
+  },
+  {
+    "title": "너무 재밌어서 잠 못 드는 세계사",
+    "library": "방아다리문학도서관",
+    "callNo": "909-우63ㄴ",
+    "author": "우야마 다쿠에이",
+    "type": "비문학",
+    "genres": [],
+    "status": "안읽음"
+  },
+  {
+    "title": "젖은 풍경은 잘 말리기",
+    "library": "방아다리문학도서관",
+    "callNo": "811.08-문92-578",
+    "author": "이기리",
+    "type": "소설",
+    "genres": [
+      "한국문학"
+    ],
+    "status": "안읽음"
+  },
+  {
+    "title": "러브 몬스터",
+    "library": "방아다리문학도서관",
+    "callNo": "813.7-이26ㄹ",
+    "author": "이두온",
+    "type": "소설",
+    "genres": [
+      "한국문학"
+    ],
+    "status": "안읽음"
+  },
+  {
+    "title": "디스펠",
+    "library": "방아다리문학도서관",
+    "callNo": "833.6-이32ㄷ",
+    "author": "이마무라 마사히로",
+    "type": "소설",
+    "genres": [
+      "추리/스릴러",
+      "세계문학"
+    ],
+    "status": "안읽음"
+  },
+  {
+    "title": "시인장의 살인",
+    "library": "방아다리문학도서관",
+    "callNo": "833.6-이32ㅅ",
+    "author": "이마무라 마사히로",
+    "type": "소설",
+    "genres": [
+      "추리/스릴러",
+      "세계문학"
+    ],
+    "status": "안읽음"
+  },
+  {
+    "title": "퇴마록 1-1 국내편",
+    "library": "방아다리문학도서관",
+    "callNo": "813.6-이66ㅌ-1-1",
+    "author": "이우혁",
+    "type": "소설",
+    "genres": [
+      "한국문학"
+    ],
+    "status": "안읽음"
+  },
+  {
+    "title": "퇴마록 1-2 국내편",
+    "library": "방아다리문학도서관",
+    "callNo": "813.6-이66ㅌ-1-2",
+    "author": "이우혁",
+    "type": "소설",
+    "genres": [
+      "한국문학"
+    ],
+    "status": "안읽음"
+  },
+  {
+    "title": "브로콜리 펀치",
+    "library": "방아다리문학도서관",
+    "callNo": "813.7-이66ㅂ",
+    "author": "이유리",
+    "type": "소설",
+    "genres": [
+      "한국문학"
+    ],
+    "status": "안읽음"
+  },
+  {
+    "title": "고독한 밤에 호루라기를 불어라",
+    "library": "방아다리문학도서관",
+    "callNo": "814.7-이67ㄱ",
+    "author": "이응준",
+    "type": "비문학",
+    "genres": [],
+    "status": "안읽음"
+  },
+  {
+    "title": "문장강화",
+    "library": "방아다리문학도서관",
+    "callNo": "802-이832ㅁ",
+    "author": "이태준",
+    "type": "비문학",
+    "genres": [],
+    "status": "안읽음"
+  },
+  {
+    "title": "크리미(널) 러브",
+    "library": "방아다리문학도서관",
+    "callNo": "813.7-이97ㅋ",
+    "author": "이희주",
+    "type": "소설",
+    "genres": [
+      "추리/스릴러",
+      "한국문학"
+    ],
+    "status": "안읽음"
+  },
+  {
+    "title": "유령의 마음으로",
+    "library": "방아다리문학도서관",
+    "callNo": "813.7-임54ㅇ",
+    "author": "임선우",
+    "type": "소설",
+    "genres": [
+      "한국문학"
+    ],
+    "status": "안읽음"
+  },
+  {
+    "title": "일의 기쁨과 슬픔",
+    "library": "방아다리문학도서관",
+    "callNo": "813.7-장296ㅇ",
+    "author": "장류진",
+    "type": "소설",
+    "genres": [
+      "한국문학"
+    ],
+    "status": "안읽음"
+  },
+  {
+    "title": "그 환자",
+    "library": "방아다리문학도서관",
+    "callNo": "843-드663ㄱ",
+    "author": "재스퍼 드윗",
+    "type": "소설",
+    "genres": [
+      "추리/스릴러",
+      "세계문학"
+    ],
+    "status": "안읽음"
+  },
+  {
+    "title": "고통에 관하여",
+    "library": "방아다리문학도서관",
+    "callNo": "813.7-정45ㄱ",
+    "author": "정보라",
+    "type": "소설",
+    "genres": [
+      "한국문학"
+    ],
+    "status": "안읽음"
+  },
+  {
+    "title": "7년의 밤",
+    "library": "방아다리문학도서관",
+    "callNo": "813.7-정66ㅊ",
+    "author": "정유정",
+    "type": "소설",
+    "genres": [
+      "추리/스릴러",
+      "한국문학"
+    ],
+    "status": "안읽음"
+  },
+  {
+    "title": "집으로부터 일만광년",
+    "library": "방아다리문학도서관",
+    "callNo": "843-팁887ㅈ",
+    "author": "제임스 팁트리 주니어",
+    "type": "소설",
+    "genres": [
+      "SF",
+      "세계문학"
+    ],
+    "status": "안읽음"
+  },
+  {
+    "title": "크림의 무게를 재는 방법",
+    "library": "방아다리문학도서관",
+    "callNo": "813.7-조58ㅋ",
+    "author": "조시현",
+    "type": "소설",
+    "genres": [
+      "한국문학"
+    ],
+    "status": "안읽음"
+  },
+  {
+    "title": "스노볼 드라이브",
+    "library": "방아다리문학도서관",
+    "callNo": "813.7-조64ㅅ",
+    "author": "조예은",
+    "type": "소설",
+    "genres": [
+      "한국문학"
+    ],
+    "status": "안읽음"
+  },
+  {
+    "title": "나는 왜 쓰는가",
+    "library": "방아다리문학도서관",
+    "callNo": "844-오66ㄴ",
+    "author": "조지 오웰",
+    "type": "비문학",
+    "genres": [],
+    "status": "안읽음"
+  },
+  {
+    "title": "로기완을 만났다",
+    "library": "방아다리문학도서관",
+    "callNo": "813.7-조93ㄹ",
+    "author": "조해진",
+    "type": "소설",
+    "genres": [
+      "한국문학"
+    ],
+    "status": "안읽음"
+  },
+  {
+    "title": "그럼에도 작가로 살겠다면",
+    "library": "방아다리문학도서관",
+    "callNo": "802-반57ㄱ",
+    "author": "줄리언 반스 외",
+    "type": "비문학",
+    "genres": [],
+    "status": "안읽음"
+  },
+  {
+    "title": "노랜드",
+    "library": "방아다리문학도서관",
+    "callNo": "813.7-천54노",
+    "author": "천선란",
+    "type": "소설",
+    "genres": [
+      "SF",
+      "한국문학"
+    ],
+    "status": "안읽음"
+  },
+  {
+    "title": "귀신들의 땅",
+    "library": "방아다리문학도서관",
+    "callNo": "823.7-천57ㄱ",
+    "author": "천쓰홍",
+    "type": "소설",
+    "genres": [
+      "세계문학"
+    ],
+    "status": "안읽음"
+  },
+  {
+    "title": "구의 증명",
+    "library": "방아다리문학도서관",
+    "callNo": "813.7-최78구",
+    "author": "최진영",
+    "type": "소설",
+    "genres": [
+      "한국문학"
+    ],
+    "status": "안읽음"
+  },
+  {
+    "title": "겨울 방학",
+    "library": "방아다리문학도서관",
+    "callNo": "813.7-최78ㄱ",
+    "author": "최진영",
+    "type": "소설",
+    "genres": [
+      "한국문학"
+    ],
+    "status": "안읽음"
+  },
+  {
+    "title": "원도",
+    "library": "방아다리문학도서관",
+    "callNo": "813.7-최78워",
+    "author": "최진영",
+    "type": "소설",
+    "genres": [
+      "한국문학"
+    ],
+    "status": "안읽음"
+  },
+  {
+    "title": "해가 지는 곳으로",
+    "library": "방아다리문학도서관",
+    "callNo": "813.7-최78ㅎ",
+    "author": "최진영",
+    "type": "소설",
+    "genres": [
+      "한국문학"
+    ],
+    "status": "안읽음"
+  },
+  {
+    "title": "챔피언들의 아침식사",
+    "library": "방아다리문학도서관",
+    "callNo": "843-보198ㅊ",
+    "author": "커트 보니것",
+    "type": "소설",
+    "genres": [
+      "세계문학"
+    ],
+    "status": "안읽음"
+  },
+  {
+    "title": "제5도살장 : 그래픽 노블",
+    "library": "방아다리문학도서관",
+    "callNo": "843-보198ㅈ",
+    "author": "커트 보니것",
+    "type": "소설",
+    "genres": [
+      "세계문학"
+    ],
+    "status": "안읽음"
+  },
+  {
+    "title": "아마겟돈을 회상하며",
+    "library": "방아다리문학도서관",
+    "callNo": "843-보198ㅇ",
+    "author": "커트 보니것",
+    "type": "소설",
+    "genres": [
+      "세계문학"
+    ],
+    "status": "안읽음"
+  },
+  {
+    "title": "카메라를 보세요",
+    "library": "방아다리문학도서관",
+    "callNo": "843-보198ㅋ",
+    "author": "커트 보니것",
+    "type": "소설",
+    "genres": [
+      "세계문학"
+    ],
+    "status": "안읽음"
+  },
+  {
+    "title": "몽키 하우스에 오신 것을 환영합니다",
+    "library": "방아다리문학도서관",
+    "callNo": "843-보198ㅁ",
+    "author": "커트 보니것",
+    "type": "소설",
+    "genres": [
+      "세계문학"
+    ],
+    "status": "안읽음"
+  },
+  {
+    "title": "은랑전",
+    "library": "방아다리문학도서관",
+    "callNo": "843-리66으",
+    "author": "켄 리우",
+    "type": "소설",
+    "genres": [
+      "SF",
+      "세계문학"
+    ],
+    "status": "안읽음"
+  },
+  {
+    "title": "종이 동물원",
+    "library": "방아다리문학도서관",
+    "callNo": "843-리66ㅈ",
+    "author": "켄 리우",
+    "type": "소설",
+    "genres": [
+      "SF",
+      "세계문학"
+    ],
+    "status": "안읽음"
+  },
+  {
+    "title": "일곱 번째 달 일곱 번째 밤",
+    "library": "방아다리문학도서관",
+    "callNo": "808.3-일15ㅇ",
+    "author": "켄 리우 외",
+    "type": "소설",
+    "genres": [
+      "SF"
+    ],
+    "status": "안읽음"
+  },
+  {
+    "title": "베스트 오브 코니 윌리스",
+    "library": "방아다리문학도서관",
+    "callNo": "843-윌298ㅂ",
+    "author": "코니 윌리스",
+    "type": "소설",
+    "genres": [
+      "SF",
+      "세계문학"
+    ],
+    "status": "안읽음"
+  },
+  {
+    "title": "가벼운 마음",
+    "library": "방아다리문학도서관",
+    "callNo": "863-보43ㄱ",
+    "author": "크리스티앙 보뱅",
+    "type": "소설",
+    "genres": [
+      "세계문학"
+    ],
+    "status": "안읽음"
+  },
+  {
+    "title": "그리움의 정원에서",
+    "library": "방아다리문학도서관",
+    "callNo": "864-보298ㄱ",
+    "author": "크리스티앙 보뱅",
+    "type": "소설",
+    "genres": [
+      "세계문학"
+    ],
+    "status": "안읽음"
+  },
+  {
+    "title": "작은 파티 드레스",
+    "library": "방아다리문학도서관",
+    "callNo": "864-보43자",
+    "author": "크리스티앙 보뱅",
+    "type": "소설",
+    "genres": [
+      "세계문학"
+    ],
+    "status": "안읽음"
+  },
+  {
+    "title": "지극히 낮으신",
+    "library": "방아다리문학도서관",
+    "callNo": "864-보43ㅈ",
+    "author": "크리스티앙 보뱅",
+    "type": "소설",
+    "genres": [
+      "세계문학"
+    ],
+    "status": "안읽음"
+  },
+  {
+    "title": "더 인간적인 건축",
+    "library": "방아다리문학도서관",
+    "callNo": "540-헤24ㄷ",
+    "author": "토마스 헤더윅",
+    "type": "비문학",
+    "genres": [],
+    "status": "안읽음"
+  },
+  {
+    "title": "불안의 책",
+    "library": "방아다리문학도서관",
+    "callNo": "808-세14마-130",
+    "author": "페르난두 페소아",
+    "type": "소설",
+    "genres": [
+      "세계문학"
+    ],
+    "status": "안읽음"
+  },
+  {
+    "title": "카라마조프가의 형제들 1",
+    "library": "방아다리문학도서관",
+    "callNo": "808-세14ㅁ-154",
+    "author": "표도르 도스토예프스키",
+    "type": "소설",
+    "genres": [
+      "세계문학"
+    ],
+    "status": "안읽음"
+  },
+  {
+    "title": "어느 개의 연구",
+    "library": "방아다리문학도서관",
+    "callNo": "853-카897ㅇ",
+    "author": "프란츠 카프카",
+    "type": "소설",
+    "genres": [
+      "세계문학"
+    ],
+    "status": "안읽음"
+  },
+  {
+    "title": "하우스메이드",
+    "library": "방아다리문학도서관",
+    "callNo": "843-맥892ㅎ",
+    "author": "프리다 맥파든",
+    "type": "소설",
+    "genres": [
+      "추리/스릴러",
+      "세계문학"
+    ],
+    "status": "안읽음"
+  },
+  {
+    "title": "안드로이드는 전기양의 꿈을 꾸는가?",
+    "library": "방아다리문학도서관",
+    "callNo": "843-딕898ㅇ",
+    "author": "필립 K. 딕",
+    "type": "소설",
+    "genres": [
+      "SF",
+      "세계문학"
+    ],
+    "status": "안읽음"
+  },
+  {
+    "title": "낮술",
+    "library": "방아다리문학도서관",
+    "callNo": "833.6-하292ㄴ",
+    "author": "하라다 히카",
+    "type": "소설",
+    "genres": [
+      "세계문학"
+    ],
+    "status": "안읽음"
+  },
+  {
+    "title": "얼음나무 숲",
+    "library": "방아다리문학도서관",
+    "callNo": "813.7-하78ㅇ",
+    "author": "하지은",
+    "type": "소설",
+    "genres": [
+      "한국문학"
+    ],
+    "status": "안읽음"
+  },
+  {
+    "title": "작별",
+    "library": "방아다리문학도서관",
+    "callNo": "813.7082-이72ㄱ-12",
+    "author": "한강 [외]",
+    "type": "소설",
+    "genres": [
+      "한국문학"
+    ],
+    "status": "안읽음"
+  },
+  {
+    "title": "시와 산책",
+    "library": "방아다리문학도서관",
+    "callNo": "818-말27ㅅ-4",
+    "author": "한정원",
+    "type": "비문학",
+    "genres": [],
+    "status": "안읽음"
+  },
+  {
+    "title": "중력의 임무",
+    "library": "방아다리문학도서관",
+    "callNo": "843-클294ㅈ",
+    "author": "할 클레멘트",
+    "type": "소설",
+    "genres": [
+      "SF",
+      "세계문학"
+    ],
+    "status": "안읽음"
+  },
+  {
+    "title": "월든",
+    "library": "방아다리문학도서관",
+    "callNo": "844-소295ㅇ",
+    "author": "헨리 데이빗 소로우",
+    "type": "비문학",
+    "genres": [],
+    "status": "안읽음"
+  },
+  {
+    "title": "일리아스",
+    "library": "방아다리문학도서관",
+    "callNo": "892.1-호33ㅇ",
+    "author": "호메로스",
+    "type": "소설",
+    "genres": [
+      "세계문학"
+    ],
+    "status": "안읽음"
+  },
+  {
+    "title": "지렁이, 소리 없이 땅을 일구는 일꾼",
+    "library": "갈산도서관",
+    "callNo": "493.95-스886ㅈ",
+    "author": "에이미 스튜어트",
+    "type": "비문학",
+    "genres": [],
+    "status": "안읽음"
+  },
+  {
+    "title": "파운데이션",
+    "library": "개울건강도서관",
+    "callNo": "843.5-아58ㅍ-1",
+    "author": "아이작 아시모프",
+    "type": "소설",
+    "genres": [
+      "SF",
+      "세계문학"
+    ],
+    "status": "안읽음"
+  },
+  {
+    "title": "메리 수를 죽이고",
+    "library": "개울건강도서관",
+    "callNo": "833.6-오57ㅁ",
+    "author": "오쓰이치 외",
+    "type": "소설",
+    "genres": [
+      "추리/스릴러",
+      "세계문학"
+    ],
+    "status": "안읽음"
+  },
+  {
+    "title": "화전가",
+    "library": "개울건강도서관",
+    "callNo": "812.6-배52ㅎ",
+    "author": "배삼식",
+    "type": "소설",
+    "genres": [
+      "한국문학"
+    ],
+    "status": "안읽음"
+  },
+  {
+    "title": "여름으로 가는 문",
+    "library": "개울건강도서관",
+    "callNo": "843.5-하68ㅇ",
+    "author": "로버트 A. 하인라인",
+    "type": "소설",
+    "genres": [
+      "SF",
+      "세계문학"
+    ],
+    "status": "안읽음"
+  },
+  {
+    "title": "크림슨의 미궁",
+    "library": "개울건강도서관",
+    "callNo": "833.6-기59ㅋ",
+    "author": "기시 유스케",
+    "type": "소설",
+    "genres": [
+      "추리/스릴러",
+      "세계문학"
+    ],
+    "status": "안읽음"
+  },
+  {
+    "title": "넷플릭스 시대의 글쓰기",
+    "library": "개울건강도서관",
+    "callNo": "802-더17ㄴ",
+    "author": "패멀라 더글러스",
+    "type": "비문학",
+    "genres": [],
+    "status": "안읽음"
+  },
+  {
+    "title": "라쇼몽",
+    "library": "모새미작은도서관",
+    "callNo": "833.6-아876ㄹ",
+    "author": "아쿠타가와 류노스케",
+    "type": "소설",
+    "genres": [
+      "세계문학"
+    ],
+    "status": "안읽음"
+  },
+  {
+    "title": "나는 언제나 옳다",
+    "library": "목1동 도서방",
+    "callNo": "100",
+    "author": "길리언 플린",
+    "type": "소설",
+    "genres": [
+      "추리/스릴러",
+      "세계문학"
+    ],
+    "status": "안읽음"
+  },
+  {
+    "title": "부스러졌지만 파괴되진 않았어",
+    "library": "목마교육도서관",
+    "callNo": "332.279-김12ㅂ",
+    "author": "김가을",
+    "type": "비문학",
+    "genres": [],
+    "status": "안읽음"
+  },
+  {
+    "title": "지하로부터의 수기",
+    "library": "목마교육도서관",
+    "callNo": "808.3-열298ㅇ-121",
+    "author": "표도르 미하일로비치 도스또예프스끼",
+    "type": "소설",
+    "genres": [
+      "세계문학"
+    ],
+    "status": "안읽음"
+  },
+  {
+    "title": "우주복 있음, 출장 가능",
+    "library": "목마교육도서관",
+    "callNo": "843-하68우",
+    "author": "로버트 A. 하인라인",
+    "type": "소설",
+    "genres": [
+      "SF",
+      "세계문학"
+    ],
+    "status": "안읽음"
+  },
+  {
+    "title": "여름으로 가는 문",
+    "library": "목마교육도서관",
+    "callNo": "843-하68여",
+    "author": "로버트 A. 하인라인",
+    "type": "소설",
+    "genres": [
+      "SF",
+      "세계문학"
+    ],
+    "status": "안읽음"
+  },
+  {
+    "title": "버너 자매",
+    "library": "미감도서관",
+    "callNo": "843.5-워887ㅂ",
+    "author": "이디스 워튼",
+    "type": "소설",
+    "genres": [
+      "세계문학"
+    ],
+    "status": "안읽음"
+  },
+  {
+    "title": "오만하게 제압하라",
+    "library": "미감도서관",
+    "callNo": "325.211-모27ㅇ",
+    "author": "모들러 페터",
+    "type": "비문학",
+    "genres": [],
+    "status": "안읽음"
+  },
+  {
+    "title": "애꾸눈 소녀",
+    "library": "신월3북카페",
+    "callNo": "833.6-마63ㅇ",
+    "author": "마야 유타카",
+    "type": "소설",
+    "genres": [
+      "추리/스릴러",
+      "세계문학"
+    ],
+    "status": "안읽음"
+  },
+  {
+    "title": "선악의 저편",
+    "library": "신월음악도서관",
+    "callNo": "165.77-니83선",
+    "author": "프리드리히 니체",
+    "type": "비문학",
+    "genres": [],
+    "status": "안읽음"
+  },
+  {
+    "title": "니체",
+    "library": "신월음악도서관",
+    "callNo": "165.77-정225ㄴ",
+    "author": "정동호",
+    "type": "비문학",
+    "genres": [],
+    "status": "안읽음"
+  },
+  {
+    "title": "크리피",
+    "library": "신월음악도서관",
+    "callNo": "833.6-마64ㅋ",
+    "author": "마에카와 유타카",
+    "type": "소설",
+    "genres": [
+      "추리/스릴러",
+      "세계문학"
+    ],
+    "status": "안읽음"
+  },
+  {
+    "title": "크리스마스 건너뛰기",
+    "library": "신월음악도서관",
+    "callNo": "843-그298ㅋ",
+    "author": "존 그리샴",
+    "type": "소설",
+    "genres": [
+      "세계문학"
+    ],
+    "status": "안읽음"
+  },
+  {
+    "title": "언제나 밤인 세계",
+    "library": "신월음악도서관",
+    "callNo": "813.7-하78ㅇ",
+    "author": "하지은",
+    "type": "소설",
+    "genres": [
+      "한국문학"
+    ],
+    "status": "안읽음"
+  },
+  {
+    "title": "레벨 세븐",
+    "library": "신월음악도서관",
+    "callNo": "833.6-미63ㄹ",
+    "author": "미야베 미유키",
+    "type": "소설",
+    "genres": [
+      "추리/스릴러",
+      "세계문학"
+    ],
+    "status": "안읽음"
+  },
+  {
+    "title": "무녀굴",
+    "library": "신월음악도서관",
+    "callNo": "813.7-신78ㅁ",
+    "author": "신진오",
+    "type": "소설",
+    "genres": [
+      "추리/스릴러",
+      "한국문학"
+    ],
+    "status": "안읽음"
+  },
+  {
+    "title": "유년기의 끝",
+    "library": "신월음악도서관",
+    "callNo": "843-클292ㅇ",
+    "author": "아서 C. 클라크",
+    "type": "소설",
+    "genres": [
+      "SF",
+      "세계문학"
+    ],
+    "status": "안읽음"
+  },
+  {
+    "title": "도매가로 기억을 팝니다",
+    "library": "신월음악도서관",
+    "callNo": "843-딕849ㄷ",
+    "author": "필립 K. 딕",
+    "type": "소설",
+    "genres": [
+      "SF",
+      "세계문학"
+    ],
+    "status": "안읽음"
+  },
+  {
+    "title": "악령 하",
+    "library": "양천중앙도서관",
+    "callNo": "전집 808-열298ㅇ-59",
+    "author": "표도르 도스또예프스끼",
+    "type": "소설",
+    "genres": [
+      "세계문학"
+    ],
+    "status": "안읽음"
+  },
+  {
+    "title": "악령 중",
+    "library": "양천중앙도서관",
+    "callNo": "전집 808-열298ㅇ-58",
+    "author": "표도르 도스또예프스끼",
+    "type": "소설",
+    "genres": [
+      "세계문학"
+    ],
+    "status": "안읽음"
+  },
+  {
+    "title": "악령 상",
+    "library": "양천중앙도서관",
+    "callNo": "전집 808-열298ㅇ-57",
+    "author": "표도르 도스또예프스끼",
+    "type": "소설",
+    "genres": [
+      "세계문학"
+    ],
+    "status": "안읽음"
+  },
+  {
+    "title": "항상 앞부분만 쓰다가 그만두는 당신을 위한 어떻게든 글쓰기",
+    "library": "양천중앙도서관",
+    "callNo": "802-곽73ㅎ",
+    "author": "곽재식",
+    "type": "비문학",
+    "genres": [],
+    "status": "안읽음"
+  },
+  {
+    "title": "또 다른 바람",
+    "library": "양천중앙도서관",
+    "callNo": "청 843-르16ㅇ-6",
+    "author": "어슐러 르 귄",
+    "type": "소설",
+    "genres": [
+      "SF",
+      "세계문학"
+    ],
+    "status": "안읽음"
+  },
+  {
+    "title": "머나먼 바닷가",
+    "library": "양천중앙도서관",
+    "callNo": "청 843-르16ㅇ-3",
+    "author": "어슐러 르 귄",
+    "type": "소설",
+    "genres": [
+      "SF",
+      "세계문학"
+    ],
+    "status": "안읽음"
+  },
+  {
+    "title": "테하누",
+    "library": "양천중앙도서관",
+    "callNo": "청 843-르16ㅇ-4",
+    "author": "어슐러 르 귄",
+    "type": "소설",
+    "genres": [
+      "SF",
+      "세계문학"
+    ],
+    "status": "안읽음"
+  },
+  {
+    "title": "아투안의 무덤",
+    "library": "양천중앙도서관",
+    "callNo": "청 843-르16ㅇ-2",
+    "author": "어슐러 르 귄",
+    "type": "소설",
+    "genres": [
+      "SF",
+      "세계문학"
+    ],
+    "status": "안읽음"
+  },
+  {
+    "title": "어스시의 마법사",
+    "library": "양천중앙도서관",
+    "callNo": "청 843-르16ㅇ-1",
+    "author": "어슐러 르 귄",
+    "type": "소설",
+    "genres": [
+      "SF",
+      "세계문학"
+    ],
+    "status": "안읽음"
+  },
+  {
+    "title": "어스시의 이야기들",
+    "library": "양천중앙도서관",
+    "callNo": "청 843-르16ㅇ-5",
+    "author": "어슐러 르 귄",
+    "type": "소설",
+    "genres": [
+      "SF",
+      "세계문학"
+    ],
+    "status": "안읽음"
+  },
+  {
+    "title": "해리 오거스트의 열다섯 번째 삶",
+    "library": "양천중앙도서관",
+    "callNo": "843.6-노57해",
+    "author": "클레어 노스",
+    "type": "소설",
+    "genres": [
+      "SF",
+      "세계문학"
+    ],
+    "status": "안읽음"
+  },
+  {
+    "title": "아무도 아닌",
+    "library": "양천중앙도서관",
+    "callNo": "813.7-황74아",
+    "author": "황정은",
+    "type": "소설",
+    "genres": [
+      "한국문학"
+    ],
+    "status": "안읽음"
+  },
+  {
+    "title": "제비뽑기",
+    "library": "양천중앙도서관",
+    "callNo": "843.5-잭57ㅈ",
+    "author": "셜리 잭슨",
+    "type": "소설",
+    "genres": [
+      "세계문학"
+    ],
+    "status": "안읽음"
+  },
+  {
+    "title": "뼛속까지 내려가서 써라",
+    "library": "양천중앙도서관",
+    "callNo": "802-골27ㅃ",
+    "author": "나탈리 골드버그",
+    "type": "비문학",
+    "genres": [],
+    "status": "안읽음"
+  },
+  {
+    "title": "머더봇 다이어리 4 탈출 전략",
+    "library": "양천중앙도서관",
+    "callNo": "843.6-웰57ㅁ-4",
+    "author": "마샤 웰스",
+    "type": "소설",
+    "genres": [
+      "SF",
+      "세계문학"
+    ],
+    "status": "안읽음"
+  },
+  {
+    "title": "머더봇 다이어리 3 로그 프로토콜",
+    "library": "양천중앙도서관",
+    "callNo": "843.6-웰57ㅁ-3",
+    "author": "마샤 웰스",
+    "type": "소설",
+    "genres": [
+      "SF",
+      "세계문학"
+    ],
+    "status": "안읽음"
+  },
+  {
+    "title": "머더봇 다이어리 2 인공 상태",
+    "library": "양천중앙도서관",
+    "callNo": "843.6-웰57ㅁ-2",
+    "author": "마샤 웰스",
+    "type": "소설",
+    "genres": [
+      "SF",
+      "세계문학"
+    ],
+    "status": "안읽음"
+  },
+  {
+    "title": "머더봇 다이어리 1 시스템 통제불능",
+    "library": "양천중앙도서관",
+    "callNo": "843.6-웰57ㅁ-1",
+    "author": "마샤 웰스",
+    "type": "소설",
+    "genres": [
+      "SF",
+      "세계문학"
+    ],
+    "status": "안읽음"
+  },
+  {
+    "title": "화성 연대기",
+    "library": "양천중앙도서관",
+    "callNo": "843.5-브293ㅎ",
+    "author": "레이 브래드버리",
+    "type": "소설",
+    "genres": [
+      "SF",
+      "세계문학"
+    ],
+    "status": "안읽음"
+  },
+  {
+    "title": "전도서에 바치는 장미",
+    "library": "양천중앙도서관",
+    "callNo": "전집 808-열298ㅇ-11",
+    "author": "로저 젤라즈니",
+    "type": "소설",
+    "genres": [
+      "SF",
+      "세계문학"
+    ],
+    "status": "안읽음"
+  },
+  {
+    "title": "도덕의 계보",
+    "library": "양천중앙도서관",
+    "callNo": "165.77-니83도",
+    "author": "프리드리히 니체",
+    "type": "비문학",
+    "genres": [],
+    "status": "안읽음"
+  },
+  {
+    "title": "마음을 흔드는 글쓰기",
+    "library": "양천중앙도서관",
+    "callNo": "802-게78ㅁ",
+    "author": "프리츠 게징",
+    "type": "비문학",
+    "genres": [],
+    "status": "안읽음"
+  },
+  {
+    "title": "처음 읽는 술의 세계사",
+    "library": "양천중앙도서관",
+    "callNo": "573.09-마52ㅊ",
+    "author": "미야자키 마사카츠",
+    "type": "비문학",
+    "genres": [],
+    "status": "안읽음"
+  },
+  {
+    "title": "글쓰기의 최전선",
+    "library": "양천중앙도서관",
+    "callNo": "802-은66ㄱ",
+    "author": "은유",
+    "type": "비문학",
+    "genres": [],
+    "status": "안읽음"
+  },
+  {
+    "title": "단지 소설일 뿐이네",
+    "library": "양천중앙도서관",
+    "callNo": "813.7-구44다",
+    "author": "구병모",
+    "type": "소설",
+    "genres": [
+      "한국문학"
+    ],
+    "status": "안읽음"
+  },
+  {
+    "title": "포스트맨은 벨을 두 번 울린다",
+    "library": "양천중앙도서관",
+    "callNo": "전집 808-민67ㅅ-169",
+    "author": "제임스 M. 케인",
+    "type": "소설",
+    "genres": [
+      "추리/스릴러",
+      "세계문학"
+    ],
+    "status": "안읽음"
+  },
+  {
+    "title": "예감은 틀리지 않는다",
+    "library": "양천중앙도서관",
+    "callNo": "843-반57예",
+    "author": "줄리언 반스",
+    "type": "소설",
+    "genres": [
+      "세계문학"
+    ],
+    "status": "안읽음"
+  },
+  {
+    "title": "파워 오브 도그",
+    "library": "양천중앙도서관",
+    "callNo": "843.5-새48ㅍ",
+    "author": "토머스 새비지",
+    "type": "소설",
+    "genres": [
+      "세계문학"
+    ],
+    "status": "안읽음"
+  },
+  {
+    "title": "체스 이야기·낯선 여인의 편지",
+    "library": "양천중앙도서관",
+    "callNo": "전집 808-문92ㅅ-21",
+    "author": "슈테판 츠바이크",
+    "type": "소설",
+    "genres": [
+      "세계문학"
+    ],
+    "status": "안읽음"
+  },
+  {
+    "title": "지하로부터의 수기",
+    "library": "양천중앙도서관",
+    "callNo": "전집 808-민67ㅅ-239",
+    "author": "표도르 도스토에프스키",
+    "type": "소설",
+    "genres": [
+      "세계문학"
+    ],
+    "status": "안읽음"
+  },
+  {
+    "title": "노조키메",
+    "library": "양천중앙도서관",
+    "callNo": "833.6-미57ㄴ",
+    "author": "미쓰다 신조",
+    "type": "소설",
+    "genres": [
+      "추리/스릴러",
+      "세계문학"
+    ],
+    "status": "안읽음"
+  },
+  {
+    "title": "흉가",
+    "library": "양천중앙도서관",
+    "callNo": "833.6-미57휴",
+    "author": "미쓰다 신조",
+    "type": "소설",
+    "genres": [
+      "추리/스릴러",
+      "세계문학"
+    ],
+    "status": "안읽음"
+  },
+  {
+    "title": "다잉 아이",
+    "library": "양천중앙도서관",
+    "callNo": "833.6-히12ㄷ",
+    "author": "히가시노 게이고",
+    "type": "소설",
+    "genres": [
+      "추리/스릴러",
+      "세계문학"
+    ],
+    "status": "안읽음"
+  },
+  {
+    "title": "치치새가 사는 숲",
+    "library": "양천중앙도서관",
+    "callNo": "813.7-장78ㅊ",
+    "author": "장진영",
+    "type": "소설",
+    "genres": [
+      "한국문학"
+    ],
+    "status": "안읽음"
+  },
+  {
+    "title": "이미지란 무엇인가",
+    "library": "양천중앙도서관",
+    "callNo": "104-이55ㅇ",
+    "author": "이솔",
+    "type": "비문학",
+    "genres": [],
+    "status": "안읽음"
+  },
+  {
+    "title": "재난에 맞서는 과학",
+    "library": "양천중앙도서관",
+    "callNo": "471.3-박78ㅈ",
+    "author": "박진영",
+    "type": "비문학",
+    "genres": [],
+    "status": "안읽음"
+  },
+  {
+    "title": "일이란 무엇인가",
+    "library": "양천중앙도서관",
+    "callNo": "325.211-고25ㅇ",
+    "author": "고동진",
+    "type": "비문학",
+    "genres": [],
+    "status": "안읽음"
+  },
+  {
+    "title": "글 쓰는 여자들의 특별한 친구",
+    "library": "양천중앙도서관",
+    "callNo": "809-장64ㄱ",
+    "author": "장영은",
+    "type": "비문학",
+    "genres": [],
+    "status": "안읽음"
+  },
+  {
+    "title": "어린 시절 : 코펜하겐 삼부작 1",
+    "library": "양천중앙도서관",
+    "callNo": "859.81-디887ㅇ-1",
+    "author": "토베 디틀레우센",
+    "type": "소설",
+    "genres": [
+      "세계문학"
+    ],
+    "status": "안읽음"
+  },
+  {
+    "title": "엄청나게 시끄럽고 믿을 수 없게 가까운",
+    "library": "양천중앙도서관",
+    "callNo": "843.6-포64ㅇ",
+    "author": "조너선 사프란 포어",
+    "type": "소설",
+    "genres": [
+      "세계문학"
+    ],
+    "status": "안읽음"
+  },
+  {
+    "title": "행복한 죽음",
+    "library": "양천중앙도서관",
+    "callNo": "863-카36ㅎ",
+    "author": "알베르 카뮈",
+    "type": "소설",
+    "genres": [
+      "세계문학"
+    ],
+    "status": "안읽음"
+  },
+  {
+    "title": "닫힌 방·악마와 선한 신",
+    "library": "양천중앙도서관",
+    "callNo": "전집 808-민67ㅅ-315",
+    "author": "장폴 사르트르",
+    "type": "소설",
+    "genres": [
+      "세계문학"
+    ],
+    "status": "안읽음"
+  },
+  {
+    "title": "밤으로의 긴 여로",
+    "library": "양천중앙도서관",
+    "callNo": "청 808-민67ㅅ-69",
+    "author": "유진 오닐",
+    "type": "소설",
+    "genres": [
+      "세계문학"
+    ],
+    "status": "안읽음"
+  },
+  {
+    "title": "별도 없는 한밤에",
+    "library": "양천중앙도서관",
+    "callNo": "전집 808-황17ㅁ-142",
+    "author": "스티븐 킹",
+    "type": "소설",
+    "genres": [
+      "추리/스릴러",
+      "세계문학"
+    ],
+    "status": "안읽음"
+  },
+  {
+    "title": "대지의 아이들 Ⅰ 동굴곰족 2",
+    "library": "양천중앙도서관",
+    "callNo": "843.5-아66ㄷ-1-2",
+    "author": "진 M. 아우얼",
+    "type": "소설",
+    "genres": [
+      "세계문학"
+    ],
+    "status": "안읽음"
+  },
+  {
+    "title": "대지의 아이들 Ⅰ 동굴곰족 1",
+    "library": "양천중앙도서관",
+    "callNo": "843.5-아66ㄷ-1-1",
+    "author": "진 M. 아우얼",
+    "type": "소설",
+    "genres": [
+      "세계문학"
+    ],
+    "status": "안읽음"
+  },
+  {
+    "title": "설계자들",
+    "library": "양천중앙도서관",
+    "callNo": "813.7-김64서",
+    "author": "김언수",
+    "type": "소설",
+    "genres": [
+      "추리/스릴러",
+      "한국문학"
+    ],
+    "status": "안읽음"
+  },
+  {
+    "title": "치명적인 은총",
+    "library": "양천중앙도서관",
+    "callNo": "843.6-페198ㅊ",
+    "author": "루이즈 페니",
+    "type": "소설",
+    "genres": [
+      "추리/스릴러",
+      "세계문학"
+    ],
+    "status": "안읽음"
+  },
+  {
+    "title": "한밤의 도박",
+    "library": "양천중앙도서관",
+    "callNo": "892.99-슈198ㅎ",
+    "author": "아르투어 슈니츨러",
+    "type": "소설",
+    "genres": [
+      "세계문학"
+    ],
+    "status": "안읽음"
+  },
+  {
+    "title": "화이트 크리스마스 미스터리",
+    "library": "양천중앙도서관",
+    "callNo": "843-펜77ㅋ-2",
+    "author": "엘러리 퀸 외",
+    "type": "소설",
+    "genres": [
+      "추리/스릴러",
+      "세계문학"
+    ],
+    "status": "안읽음"
+  },
+  {
+    "title": "신을 받으라",
+    "library": "양천중앙도서관",
+    "callNo": "813.7-박93ㅅ",
+    "author": "박해로",
+    "type": "소설",
+    "genres": [
+      "한국문학"
+    ],
+    "status": "안읽음"
+  },
+  {
+    "title": "솔라리스",
+    "library": "양천중앙도서관",
+    "callNo": "892.95-렘57ㅅ",
+    "author": "스타니스와프 렘",
+    "type": "소설",
+    "genres": [
+      "SF",
+      "세계문학"
+    ],
+    "status": "안읽음"
+  },
+  {
+    "title": "뉴로맨서",
+    "library": "양천중앙도서관",
+    "callNo": "843-깁57ㄴ",
+    "author": "윌리엄 깁슨",
+    "type": "소설",
+    "genres": [
+      "SF",
+      "세계문학"
+    ],
+    "status": "안읽음"
+  },
+  {
+    "title": "멋진 징조들",
+    "library": "양천중앙도서관",
+    "callNo": "843.5-프293ㅁ",
+    "author": "테리 프래쳇, 닐 게이먼 [공]",
+    "type": "소설",
+    "genres": [
+      "SF",
+      "세계문학"
+    ],
+    "status": "안읽음"
+  },
+  {
+    "title": "고양이 요람",
+    "library": "양천중앙도서관",
+    "callNo": "843.6-보198ㄱ",
+    "author": "커트 보니것",
+    "type": "소설",
+    "genres": [
+      "SF",
+      "세계문학"
+    ],
+    "status": "안읽음"
+  },
+  {
+    "title": "실패를 사랑하는 직업",
+    "library": "양천중앙도서관",
+    "callNo": "818-요75ㅅ",
+    "author": "요조",
+    "type": "비문학",
+    "genres": [],
+    "status": "안읽음"
+  },
+  {
+    "title": "영화연출론",
+    "library": "양천중앙도서관",
+    "callNo": "688.15-캐85ㅇ",
+    "author": "스티븐 디 캐츠",
+    "type": "비문학",
+    "genres": [],
+    "status": "안읽음"
+  },
+  {
+    "title": "세상에서 가장 짧은 세계사",
+    "library": "양천중앙도서관",
+    "callNo": "920-허57ㅅ",
+    "author": "존 허스트",
+    "type": "비문학",
+    "genres": [],
+    "status": "안읽음"
+  },
+  {
+    "title": "올빼미 눈의 여자",
+    "library": "양천중앙도서관",
+    "callNo": "813.7-박93ㅇ",
+    "author": "박해로",
+    "type": "소설",
+    "genres": [
+      "추리/스릴러",
+      "한국문학"
+    ],
+    "status": "안읽음"
+  },
+  {
+    "title": "동해 생활",
+    "library": "양천중앙도서관",
+    "callNo": "814.7-송78ㄷ",
+    "author": "송지현",
+    "type": "비문학",
+    "genres": [],
+    "status": "안읽음"
+  },
+  {
+    "title": "잔류 인구",
+    "library": "양천중앙도서관",
+    "callNo": "843.6-문64ㅈ",
+    "author": "엘리자베스 문",
+    "type": "소설",
+    "genres": [
+      "SF",
+      "세계문학"
+    ],
+    "status": "안읽음"
+  },
+  {
+    "title": "소네트집",
+    "library": "양천중앙도서관",
+    "callNo": "전집 808-열298ㅇ-190",
+    "author": "윌리엄 셰익스피어",
+    "type": "소설",
+    "genres": [
+      "세계문학"
+    ],
+    "status": "안읽음"
+  },
+  {
+    "title": "나의 첫 소설 쓰기",
+    "library": "양천중앙도서관",
+    "callNo": "802.3-브295ㄴ",
+    "author": "제시카 브로디",
+    "type": "비문학",
+    "genres": [],
+    "status": "안읽음"
+  },
+  {
+    "title": "날짜 없음",
+    "library": "양천중앙도서관",
+    "callNo": "813.7-장67ㄴ",
+    "author": "장은진",
+    "type": "소설",
+    "genres": [
+      "한국문학"
+    ],
+    "status": "안읽음"
+  },
+  {
+    "title": "모래의 여자",
+    "library": "양천중앙도서관",
+    "callNo": "전집 808-민67ㅅ-55",
+    "author": "아베 코보",
+    "type": "소설",
+    "genres": [
+      "세계문학"
+    ],
+    "status": "안읽음"
+  },
+  {
+    "title": "미스터리 아레나",
+    "library": "양천중앙도서관",
+    "callNo": "833.6-후872ㅁ",
+    "author": "후카미 레이이치로",
+    "type": "소설",
+    "genres": [
+      "추리/스릴러",
+      "세계문학"
+    ],
+    "status": "안읽음"
+  },
+  {
+    "title": "해바라기가 피지 않는 여름",
+    "library": "양천중앙도서관",
+    "callNo": "833.6-미86ㅎ",
+    "author": "미치오 슈스케",
+    "type": "소설",
+    "genres": [
+      "추리/스릴러",
+      "세계문학"
+    ],
+    "status": "안읽음"
+  },
+  {
+    "title": "달은 무자비한 밤의 여왕",
+    "library": "양천중앙도서관",
+    "callNo": "843-하68ㄷ",
+    "author": "로버트 A. 하인라인",
+    "type": "소설",
+    "genres": [
+      "SF",
+      "세계문학"
+    ],
+    "status": "안읽음"
+  },
+  {
+    "title": "체체파리의 비법",
+    "library": "양천중앙도서관",
+    "callNo": "843.5-팁887ㅊ",
+    "author": "제임스 팁트리 주니어",
+    "type": "소설",
+    "genres": [
+      "SF",
+      "세계문학"
+    ],
+    "status": "안읽음"
+  },
+  {
+    "title": "악의 교전 2",
+    "library": "양천중앙도서관",
+    "callNo": "833.6-기58ㅇ-2",
+    "author": "기시 유스케",
+    "type": "소설",
+    "genres": [
+      "추리/스릴러",
+      "세계문학"
+    ],
+    "status": "안읽음"
+  },
+  {
+    "title": "악의 교전 1",
+    "library": "양천중앙도서관",
+    "callNo": "833.6-기58ㅇ-1",
+    "author": "기시 유스케",
+    "type": "소설",
+    "genres": [
+      "추리/스릴러",
+      "세계문학"
+    ],
+    "status": "안읽음"
+  },
+  {
+    "title": "24분 : 핵전쟁으로 인류가 종말하기까지",
+    "library": "양천중앙도서관",
+    "callNo": "349.82-제68ㅇ",
+    "author": "애니 제이콥슨",
+    "type": "비문학",
+    "genres": [],
+    "status": "안읽음"
+  },
+  {
+    "title": "만화의 원리",
+    "library": "양천중앙도서관",
+    "callNo": "657.1-오42ㅁ",
+    "author": "오바 와타루 외",
+    "type": "비문학",
+    "genres": [],
+    "status": "안읽음"
+  },
+  {
+    "title": "독서모임 꾸리는 법",
+    "library": "양천중앙도서관",
+    "callNo": "029.83-원92ㄷ",
+    "author": "원하나",
+    "type": "비문학",
+    "genres": [],
+    "status": "안읽음"
+  },
+  {
+    "title": "화이트 호스",
+    "library": "양천중앙도서관",
+    "callNo": "",
+    "author": "강화길",
+    "type": "소설",
+    "genres": [
+      "한국문학"
+    ],
+    "status": "안읽음"
+  },
+  {
+    "title": "니체 : 해설서",
+    "library": "영어특성화도서관",
+    "callNo": "165.77-정225ㅉ",
+    "author": "정동호",
+    "type": "비문학",
+    "genres": [],
+    "status": "안읽음"
+  },
+  {
+    "title": "3월의 눈",
+    "library": "영어특성화도서관",
+    "callNo": "812.64-배52ㅅ",
+    "author": "배삼식",
+    "type": "소설",
+    "genres": [
+      "한국문학"
+    ],
+    "status": "안읽음"
+  },
+  {
+    "title": "술탄 셀림",
+    "library": "영어특성화도서관",
+    "callNo": "918.7-미821ㅅ",
+    "author": "앨런 미카일",
+    "type": "비문학",
+    "genres": [],
+    "status": "안읽음"
+  },
+  {
+    "title": "작자미상 2",
+    "library": "해맞이역사도서관",
+    "callNo": "833.6-미57ㅈ-2",
+    "author": "미쓰다 신조",
+    "type": "소설",
+    "genres": [
+      "추리/스릴러",
+      "세계문학"
+    ],
+    "status": "안읽음"
+  },
+  {
+    "title": "작자미상 1",
+    "library": "해맞이역사도서관",
+    "callNo": "833.6-미57ㅈ-1",
+    "author": "미쓰다 신조",
+    "type": "소설",
+    "genres": [
+      "추리/스릴러",
+      "세계문학"
+    ],
+    "status": "안읽음"
+  },
+  {
+    "title": "마인드 헌터",
+    "library": "해맞이역사도서관",
+    "callNo": "843.6-더17ㅁ",
+    "author": "존 더글러스",
+    "type": "비문학",
+    "genres": [],
+    "status": "안읽음"
+  },
+  {
+    "title": "나의 집이 점잖게 피를 마실 때",
+    "library": "해맞이역사도서관",
+    "callNo": "813.7-박93ㄴ",
+    "author": "박해수",
+    "type": "소설",
+    "genres": [
+      "추리/스릴러",
+      "한국문학"
+    ],
+    "status": "안읽음"
+  },
+  {
+    "title": "달리기를 말할 때 내가 하고 싶은 이야기",
+    "library": "방아다리문학도서관",
+    "callNo": "834-무292ㄷ",
+    "author": "무라카미 하루키",
+    "type": "비문학",
+    "genres": [],
+    "status": "안읽음"
+  },
+  {
+    "title": "직업으로서의 소설가",
+    "library": "방아다리문학도서관",
+    "callNo": "834-무292ㅈ",
+    "author": "무라카미 하루키",
+    "type": "비문학",
+    "genres": [],
+    "status": "안읽음"
+  },
+  {
+    "title": "니체의 초월자",
+    "library": "방아다리문학도서관",
+    "callNo": "165.77-니83니",
+    "author": "프리드리히 니체",
+    "type": "비문학",
+    "genres": [],
+    "status": "안읽음"
+  },
+  {
+    "title": "고백 : 미나코 가나에 장편소설",
+    "library": "방아다리문학도서관",
+    "callNo": "833.6-미192ㄱ",
+    "author": "미나토 가나에",
+    "type": "소설",
+    "genres": [
+      "추리/스릴러",
+      "세계문학"
+    ],
+    "status": "안읽음"
+  },
+  {
+    "title": "기사단장 죽이기 2",
+    "library": "방아다리문학도서관",
+    "callNo": "833.6-무292기-2",
+    "author": "무라카미 하루키",
+    "type": "소설",
+    "genres": [
+      "세계문학"
+    ],
+    "status": "안읽음"
+  },
+  {
+    "title": "기사단장 죽이기 1",
+    "library": "방아다리문학도서관",
+    "callNo": "833.6-무292기-1",
+    "author": "무라카미 하루키",
+    "type": "소설",
+    "genres": [
+      "세계문학"
+    ],
+    "status": "안읽음"
+  },
+  {
+    "title": "언더그라운드 = Underground",
+    "library": "양천중앙도서관",
+    "callNo": "833.6-무292어",
+    "author": "무라카미 하루키",
+    "type": "비문학",
+    "genres": [],
+    "status": "안읽음"
+  },
+  {
+    "title": "언더그라운드. 2:, 약속된 장소에서",
+    "library": "양천중앙도서관",
+    "callNo": "833.6-무292어-2",
+    "author": "무라카미 하루키",
+    "type": "비문학",
+    "genres": [],
+    "status": "안읽음"
+  },
+  {
+    "title": "커피 괴담",
+    "library": "방아다리문학도서관",
+    "callNo": "833.6-온22ㅋ",
+    "author": "온다 리쿠",
+    "type": "소설",
+    "genres": [
+      "추리/스릴러",
+      "세계문학"
+    ],
+    "status": "안읽음"
+  },
+  {
+    "title": "세상의 중심에서 사랑을 외친 짐승",
+    "library": "갈산도서관",
+    "callNo": "843.5-엘298ㅎ-3",
+    "author": "할란 엘리슨",
+    "type": "소설",
+    "genres": [
+      "SF",
+      "세계문학"
+    ],
+    "status": "안읽음"
+  },
+  {
+    "title": "제프티는 다섯 살",
+    "library": "방아다리문학도서관",
+    "callNo": "843-엘298ㅎ-1",
+    "author": "할란 엘리슨",
+    "type": "소설",
+    "genres": [
+      "SF",
+      "세계문학"
+    ],
+    "status": "안읽음"
+  },
+  {
+    "title": "베스트 오브 할란 엘리슨",
+    "library": "방아다리문학도서관",
+    "callNo": "843-엘298ㅂ",
+    "author": "할란 엘리슨",
+    "type": "소설",
+    "genres": [
+      "SF",
+      "세계문학"
+    ],
+    "status": "안읽음"
+  }
+];
+
+    // ═══════════════════════════════════════════════════════
+    //  localStorage 연동
+    // ═══════════════════════════════════════════════════════
+    function loadBooks() {
+  const saved = localStorage.getItem('BOOKS');
+  if (saved) {
+    try {
+      const savedBooks = JSON.parse(saved);
+      const savedTitles = new Set(savedBooks.map(b => b.title));
+      const newBooks = DEFAULT_BOOKS.filter(b => !savedTitles.has(b.title));
+      if (newBooks.length > 0) {
+        const merged = [...savedBooks, ...newBooks];
+        localStorage.setItem('BOOKS', JSON.stringify(merged));
+        return merged;
+      }
+      return savedBooks;
+    } catch(e) {}
+  }
+  const initial = DEFAULT_BOOKS.map(b => ({...b}));
+  localStorage.setItem('BOOKS', JSON.stringify(initial));
+  return initial;
+}
+function saveBooks() {
+  localStorage.setItem('BOOKS', JSON.stringify(BOOKS));
+}
+let BOOKS = loadBooks();
+
+    // ═══════════════════════════════════════════════════════
+    //  필터 상태
+    // ═══════════════════════════════════════════════════════
+    const F = { search: '', library: '', type: '', genre: '', status: '' };
+    let isEditMode = false;
+    let editingBookTitle = '';
+    let currentDetailStatus = '안읽음';
+
+    // ═══════════════════════════════════════════════════════
+    //  렌더링
+    // ═══════════════════════════════════════════════════════
+    function renderBooks(list) {
+      const container = document.getElementById('bookList');
+      const emptyMsg  = document.getElementById('emptyMsg');
+      container.innerHTML = '';
+
+      if (list.length === 0) {
+        container.classList.add('hidden');
+        emptyMsg.classList.remove('hidden');
+        emptyMsg.classList.add('flex');
+        return;
+      }
+      container.classList.remove('hidden');
+      emptyMsg.classList.add('hidden');
+      emptyMsg.classList.remove('flex');
+
+      list.forEach(book => {
+        const tagsList = [book.type === '소설' ? '#소설' : '#비문학',
+                          ...book.genres.map(g => '#' + g)];
+        const tagsHtml = tagsList.map(t =>
+          `<span class="text-[10px] font-semibold px-2 py-0.5 rounded-full text-white"
+                 style="background:#9B77D1;">${t}</span>`
+        ).join('');
+
+        const isChecked = book.status === '완독';
+        const checkHtml = isChecked
+          ? `<svg class="w-3.5 h-3.5 text-white" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24">
+               <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
+             </svg>` : '';
+        const cbStyle = book.status === '읽는중' ? 'border-color:#f59e0b;' : '';
+
+        const card = document.createElement('div');
+        card.className = 'bg-white rounded-2xl px-4 py-3 shadow-sm flex items-start gap-3 touch-active cursor-pointer';
+        card.innerHTML = `
+          <div class="book-checkbox ${isChecked ? 'checked' : ''} mt-0.5" style="${cbStyle}">
+            ${checkHtml}
+            ${book.status === '읽는중'
+              ? '<span style="width:8px;height:8px;border-radius:50%;background:#f59e0b;display:block;"></span>'
+              : ''}
+          </div>
+          <div class="flex-1 min-w-0">
+            <p class="font-bold text-sm text-gray-800 leading-snug">${book.title}</p>
+            <p class="text-xs text-gray-400 mt-0.5">[${book.library} - ${book.callNo}]</p>
+            <p class="text-xs text-gray-300 mt-0.5">${book.author}</p>
+          </div>
+          <div class="flex flex-col items-end gap-1 shrink-0">${tagsHtml}</div>
+        `;
+
+        card.addEventListener('click', () => showDetailScreen(book.title));
+        card.querySelector('.book-checkbox').addEventListener('click', (e) => {
+          e.stopPropagation();
+          cycleStatus(book.title);
+        });
+        container.appendChild(card);
+      });
+    }
+
+    function cycleStatus(title) {
+      const book = BOOKS.find(b => b.title === title);
+      if (!book) return;
+      const cycle = ['안읽음', '읽는중', '완독'];
+      book.status = cycle[(cycle.indexOf(book.status) + 1) % 3];
+      saveBooks();
+      applyFilters();
+    }
+
+    function applyFilters() {
+      F.search  = document.getElementById('searchInput').value.trim().toLowerCase();
+      F.library = document.getElementById('librarySelect').value;
+      F.genre   = document.getElementById('genreSelect').value;
+      document.getElementById('searchClear').classList.toggle('hidden', F.search === '');
+
+      const result = BOOKS.filter(b => {
+        if (F.search  && !b.title.toLowerCase().includes(F.search)
+                      && !b.author.toLowerCase().includes(F.search)) return false;
+        if (F.library && b.library !== F.library)    return false;
+        if (F.type    && b.type    !== F.type)        return false;
+        if (F.genre   && !b.genres.includes(F.genre)) return false;
+        if (F.status  && b.status  !== F.status)      return false;
+        return true;
+      });
+      renderBooks(result);
+    }
+
+    function toggleType(val) {
+      F.type = (F.type === val) ? '' : val;
+      document.getElementById('btnSosol').classList.toggle('active', F.type === '소설');
+      document.getElementById('btnBimun').classList.toggle('active', F.type === '비문학');
+      const genreSel = document.getElementById('genreSelect');
+      genreSel.disabled = (F.type !== '소설');
+      if (genreSel.disabled) { genreSel.value = ''; F.genre = ''; }
+      applyFilters();
+    }
+
+    function toggleStatus(val) {
+      F.status = (F.status === val) ? '' : val;
+      document.getElementById('btnWandok') .classList.toggle('active', F.status === '완독');
+      document.getElementById('btnReading').classList.toggle('active', F.status === '읽는중');
+      document.getElementById('btnUnread') .classList.toggle('active', F.status === '안읽음');
+      applyFilters();
+    }
+
+    // ═══════════════════════════════════════════════════════
+    //  도서관 직접 입력 핸들러
+    // ═══════════════════════════════════════════════════════
+    function handleLibraryChange(selectId, inputId) {
+      const sel = document.getElementById(selectId);
+      const inp = document.getElementById(inputId);
+      if (sel.value === '__new__') {
+        inp.classList.remove('hidden');
+        inp.focus();
+      } else {
+        inp.classList.add('hidden');
+        inp.value = '';
+      }
+    }
+
+    function getLibraryValue(selectId, inputId) {
+      const sel = document.getElementById(selectId);
+      if (sel.value === '__new__') {
+        return document.getElementById(inputId).value.trim();
+      }
+      return sel.value;
+    }
+
+    // 새 도서관을 select 옵션에 동적 추가
+    function addLibraryOption(selectId, name) {
+      const sel = document.getElementById(selectId);
+      // 이미 있으면 스킵
+      for (let opt of sel.options) {
+        if (opt.value === name) { sel.value = name; return; }
+      }
+      const opt = document.createElement('option');
+      opt.value = name; opt.text = name;
+      // "+ 도서관 추가" 바로 앞에 삽입
+      const lastOpt = sel.querySelector('option[value="__new__"]');
+      sel.insertBefore(opt, lastOpt);
+      sel.value = name;
+    }
+
+    function clearSearch() {
+      document.getElementById('searchInput').value = '';
+      document.getElementById('searchClear').classList.add('hidden');
+      F.search = '';
+      applyFilters();
+    }
+
+    // ═══════════════════════════════════════════════════════
+    //  화면 전환
+    // ═══════════════════════════════════════════════════════
+    function showAddScreen() {
+      document.getElementById('addScreen').classList.remove('translate-y-full');
+      document.getElementById('addScreen').classList.add('translate-y-0');
+    }
+    function showMainScreen() {
+      document.getElementById('addScreen').classList.remove('translate-y-0');
+      document.getElementById('addScreen').classList.add('translate-y-full');
+    }
+    function showMainScreenFromDetail() {
+      document.getElementById('detailScreen').classList.remove('translate-y-0');
+      document.getElementById('detailScreen').classList.add('translate-y-full');
+    }
+
+    // ═══════════════════════════════════════════════════════
+    //  입력 화면
+    // ═══════════════════════════════════════════════════════
+    function selectAddType(val) {
+      document.getElementById('addBtnSosol').classList.toggle('active', val === '소설');
+      document.getElementById('addBtnBimun').classList.toggle('active', val === '비문학');
+      const ag = document.getElementById('addGenre');
+      ag.disabled = (val !== '소설');
+      if (ag.disabled) ag.value = '';
+    }
+
+    function addBook() {
+      const title   = document.getElementById('addTitle').value.trim();
+      const library = getLibraryValue('addLibrary', 'addLibraryInput');
+      const callNo  = document.getElementById('addCallNo').value.trim();
+      const isSosol = document.getElementById('addBtnSosol').classList.contains('active');
+      const type    = isSosol ? '소설' : '비문학';
+      const genre   = document.getElementById('addGenre').value;
+
+      if (!title)                           { alert('책 제목을 입력해주세요.'); return; }
+      if (type === '소설' && !genre)        { alert('장르를 선택해주세요.'); return; }
+      if (!library)                         { alert('소장 도서관을 선택해주세요.'); return; }
+      if (!callNo)                          { alert('위치 번호를 입력해주세요.'); return; }
+
+      // 새 도서관이면 양쪽 select에 옵션 추가
+      if (document.getElementById('addLibrary').value === '__new__') {
+        addLibraryOption('addLibrary', library);
+        addLibraryOption('detailLibrary', library);
+        addLibraryOption('librarySelect', library);
+      }
+
+      BOOKS.unshift({ title, library, callNo, author: '', type,
+                      genres: type === '소설' && genre ? [genre] : [], status: '안읽음' });
+      saveBooks();
+
+      document.getElementById('addTitle').value   = '';
+      document.getElementById('addLibrary').value = '';
+      document.getElementById('addLibraryInput').classList.add('hidden');
+      document.getElementById('addLibraryInput').value = '';
+      document.getElementById('addGenre').value   = '';
+      document.getElementById('addCallNo').value  = '';
+      selectAddType('소설');
+
+      document.getElementById('searchInput').value = '';
+      F.search = ''; document.getElementById('searchClear').classList.add('hidden');
+      document.getElementById('librarySelect').value = ''; F.library = '';
+      F.type = '';
+      document.getElementById('btnSosol').classList.remove('active');
+      document.getElementById('btnBimun').classList.remove('active');
+      const gs = document.getElementById('genreSelect');
+      gs.disabled = true; gs.value = ''; F.genre = '';
+      F.status = '';
+      ['btnWandok','btnReading','btnUnread'].forEach(id =>
+        document.getElementById(id).classList.remove('active'));
+
+      applyFilters();
+      showMainScreen();
+    }
+
+    // ═══════════════════════════════════════════════════════
+    //  상세 화면
+    // ═══════════════════════════════════════════════════════
+    function showDetailScreen(title) {
+      const book = BOOKS.find(b => b.title === title);
+      if (!book) return;
+      editingBookTitle = title;
+      isEditMode = false;
+
+      document.getElementById('detailTitle').value   = book.title;
+      document.getElementById('detailLibrary').value = book.library;
+      document.getElementById('detailCallNo').value  = book.callNo;
+      selectDetailType(book.type);
+      document.getElementById('detailGenre').value = book.genres.length > 0 ? book.genres[0] : '';
+      selectDetailStatus(book.status);
+      setDetailInputsEnabled(false);
+
+      const editBtn = document.getElementById('editBtn');
+      editBtn.textContent = '편집';
+      editBtn.classList.remove('bg-gray-200','text-gray-700');
+      editBtn.classList.add('bg-p-light','text-p-main');
+      resetDeleteContainer();
+
+      document.getElementById('detailScreen').classList.remove('translate-y-full');
+      document.getElementById('detailScreen').classList.add('translate-y-0');
+    }
+
+    function toggleEditMode() {
+      isEditMode = !isEditMode;
+      const editBtn = document.getElementById('editBtn');
+      if (isEditMode) {
+        editBtn.textContent = '취소';
+        editBtn.classList.remove('bg-p-light','text-p-main');
+        editBtn.classList.add('bg-gray-200','text-gray-700');
+        setDetailInputsEnabled(true);
+      } else {
+        showDetailScreen(editingBookTitle);
+      }
+    }
+
+    function selectDetailType(val) {
+      document.getElementById('detailBtnSosol').classList.toggle('active', val === '소설');
+      document.getElementById('detailBtnBimun').classList.toggle('active', val === '비문학');
+      const dg = document.getElementById('detailGenre');
+      dg.disabled = !isEditMode || (val !== '소설');
+      if (val !== '소설') dg.value = '';
+    }
+
+    function selectDetailStatus(val) {
+      currentDetailStatus = val;
+      document.getElementById('detailBtnUnread')  .classList.toggle('active', val === '안읽음');
+      document.getElementById('detailBtnReading') .classList.toggle('active', val === '읽는중');
+      document.getElementById('detailBtnFinished').classList.toggle('active', val === '완독');
+    }
+
+    function setDetailInputsEnabled(enabled) {
+      document.getElementById('detailTitle').disabled        = !enabled;
+      document.getElementById('detailLibrary').disabled      = !enabled;
+      document.getElementById('detailLibraryInput').disabled = !enabled;
+      document.getElementById('detailCallNo').disabled       = !enabled;
+      // 편집 취소 시 입력창 숨기기
+      if (!enabled) {
+        document.getElementById('detailLibraryInput').classList.add('hidden');
+        document.getElementById('detailLibraryInput').value = '';
+      }
+      const dg = document.getElementById('detailGenre');
+      dg.disabled = !enabled || !document.getElementById('detailBtnSosol').classList.contains('active');
+
+      ['detailBtnSosol','detailBtnBimun'].forEach(id => {
+        document.getElementById(id).classList.toggle('pointer-events-none', !enabled);
+        document.getElementById(id).classList.toggle('opacity-60', !enabled);
+      });
+      ['detailBtnUnread','detailBtnReading','detailBtnFinished'].forEach(id => {
+        document.getElementById(id).classList.toggle('pointer-events-none', !enabled);
+        document.getElementById(id).classList.toggle('opacity-60', !enabled);
+      });
+
+      const saveBtn = document.getElementById('detailSaveBtn');
+      saveBtn.disabled = !enabled;
+      saveBtn.classList.toggle('bg-gray-400', !enabled);
+      saveBtn.classList.toggle('opacity-60', !enabled);
+      saveBtn.classList.toggle('cursor-not-allowed', !enabled);
+      saveBtn.classList.toggle('bg-[#7B5EA7]', enabled);
+    }
+
+    function saveBook() {
+      const book = BOOKS.find(b => b.title === editingBookTitle);
+      if (!book) return;
+
+      const title   = document.getElementById('detailTitle').value.trim();
+      const library = getLibraryValue('detailLibrary', 'detailLibraryInput');
+      const callNo  = document.getElementById('detailCallNo').value.trim();
+      const isSosol = document.getElementById('detailBtnSosol').classList.contains('active');
+      const type    = isSosol ? '소설' : '비문학';
+      const genre   = document.getElementById('detailGenre').value;
+
+      if (!title)                    { alert('책 제목을 입력해주세요.'); return; }
+      if (type === '소설' && !genre) { alert('장르를 선택해주세요.'); return; }
+      if (!library)                  { alert('소장 도서관을 선택해주세요.'); return; }
+      if (!callNo)                   { alert('위치 번호를 입력해주세요.'); return; }
+      if (title !== editingBookTitle && BOOKS.some(b => b.title === title)) {
+        alert('이미 존재하는 책 제목입니다.'); return;
+      }
+
+      // 새 도서관이면 select에 옵션 추가
+      if (document.getElementById('detailLibrary').value === '__new__') {
+        addLibraryOption('addLibrary', library);
+        addLibraryOption('detailLibrary', library);
+        addLibraryOption('librarySelect', library);
+      }
+
+      book.title = title; book.library = library; book.callNo = callNo;
+      book.type = type; book.genres = type === '소설' && genre ? [genre] : [];
+      book.status = currentDetailStatus;
+
+      saveBooks();
+      applyFilters();
+      showMainScreenFromDetail();
+    }
+
+    function resetDeleteContainer() {
+      document.getElementById('deleteContainer').innerHTML = `
+        <button onclick="confirmDeletePrompt()"
+                class="w-full py-4 rounded-2xl text-white text-xl font-bold shadow-lg tracking-wide bg-red-500 touch-active">삭제</button>
+      `;
+    }
+
+    function confirmDeletePrompt() {
+      document.getElementById('deleteContainer').innerHTML = `
+        <div class="flex gap-2 w-full">
+          <button onclick="executeDelete()"
+                  class="flex-1 py-4 rounded-2xl text-white text-sm font-bold shadow-lg bg-red-600 touch-active">확인</button>
+          <button onclick="resetDeleteContainer()"
+                  class="flex-1 py-4 rounded-2xl text-gray-700 text-sm font-bold shadow-lg bg-gray-200 touch-active">취소</button>
+        </div>
+      `;
+    }
+
+    function executeDelete() {
+      const idx = BOOKS.findIndex(b => b.title === editingBookTitle);
+      if (idx !== -1) BOOKS.splice(idx, 1);
+      saveBooks();
+      applyFilters();
+      showMainScreenFromDetail();
+    }
+
+    // ═══════════════════════════════════════════════════════
+    //  백업 모달
+    // ═══════════════════════════════════════════════════════
+    function showBackupModal() {
+      document.getElementById('importResult').classList.add('hidden');
+      document.getElementById('backupModal').classList.remove('hidden');
+    }
+
+    function hideBackupModal(e) {
+      if (!e || e.target === document.getElementById('backupModal')) {
+        document.getElementById('backupModal').classList.add('hidden');
+      }
+    }
+
+    function exportBackup() {
+      const json = JSON.stringify(BOOKS, null, 2);
+      const blob = new Blob([json], { type: 'application/json' });
+      const url  = URL.createObjectURL(blob);
+      const a    = document.createElement('a');
+      const date = new Date().toISOString().slice(0,10);
+      a.href     = url;
+      a.download = `booklist_backup_${date}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+
+    function importBackup(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        try {
+          const parsed = JSON.parse(e.target.result);
+          if (!Array.isArray(parsed)) throw new Error();
+          if (!confirm(`${parsed.length}권 데이터로 복구할까요? 현재 데이터가 덮어씌워져요.`)) return;
+          BOOKS.length = 0;
+          parsed.forEach(b => BOOKS.push(b));
+          saveBooks();
+          applyFilters();
+          const result = document.getElementById('importResult');
+          result.textContent = `✅ ${parsed.length}권 복구 완료!`;
+          result.classList.remove('hidden');
+          result.style.color = '#22c55e';
+          setTimeout(() => hideBackupModal(), 1500);
+        } catch {
+          const result = document.getElementById('importResult');
+          result.textContent = '❌ 올바른 백업 파일이 아닙니다.';
+          result.classList.remove('hidden');
+          result.style.color = '#ef4444';
+        }
+        event.target.value = '';
+      };
+      reader.readAsText(file);
+    }
+
+    // ═══════════════════════════════════════════════════════
+    //  초기 렌더링
+    // ═══════════════════════════════════════════════════════
+    renderBooks(BOOKS);
+  </script>
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('sw.js')
+          .then(reg => console.log('SW registered:', reg.scope))
+          .catch(err => console.log('SW error:', err));
+      });
+    }
+  </script>
+</body>
+</html>
