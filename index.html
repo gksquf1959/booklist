@@ -3273,6 +3273,13 @@
         if (F.status  && b.status  !== F.status)      return false;
         return true;
       });
+      const total = BOOKS.length;
+      const countEl = document.getElementById('bookCount');
+      if (F.search || F.library || F.type || F.genre || F.status) {
+        countEl.textContent = `검색 결과: ${result.length}권 / 총 ${total}권`;
+      } else {
+        countEl.textContent = `전체: ${total}권`;
+      }
       renderBooks(result);
     }
 
@@ -3655,6 +3662,8 @@
     // ═══════════════════════════════════════════════════════
     //  초기 렌더링
     // ═══════════════════════════════════════════════════════
+      const countEl = document.getElementById('bookCount');
+      countEl.textContent = `전체: ${BOOKS.length}권`;
     renderBooks(BOOKS);
   </script>
   <script>
