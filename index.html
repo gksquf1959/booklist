@@ -61,17 +61,9 @@
     #addTitle:focus::placeholder, #addCallNo:focus::placeholder,
     #detailTitle:focus::placeholder, #detailCallNo:focus::placeholder { color: transparent; }
 
-    /* 커스텀 스크롤바 */
-    #bookList::-webkit-scrollbar { width: 56px}
-    #bookList::-webkit-scrollbar-track { background: transparent; }
-    #bookList::-webkit-scrollbar-thumb {
-      background: rgba(155, 119, 209, 0.35);
-      border-radius: 10px;
-    }
-    #bookList::-webkit-scrollbar-thumb:active {
-      background: rgba(123, 94, 167, 0.75);
-    }
-    #bookList { scrollbar-width: auto; scrollbar-color: rgba(155,119,209,0.35) transparent; }
+    /* 스크롤바 */
+    #bookList::-webkit-scrollbar-thumb { background: #9B77D1; }
+    #bookList { scrollbar-color: #9B77D1 transparent; }
 
     /* 백업 모달 */
     .modal-overlay {
@@ -82,7 +74,6 @@
       background: white; border-radius: 24px 24px 0 0;
       width: 100%; max-width: 412px; padding: 28px 20px 48px;
     }
-
 
   </style>
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
