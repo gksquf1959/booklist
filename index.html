@@ -3579,15 +3579,30 @@
     // ═══════════════════════════════════════════════════════
     //  안드로이드 뒤로가기 버튼 처리
     // ═══════════════════════════════════════════════════════
+    let backPressedOnce = false;
+
     window.addEventListener('popstate', () => {
       const detailVisible = document.getElementById('detailScreen').classList.contains('translate-y-0');
       const addVisible    = document.getElementById('addScreen').classList.contains('translate-y-0');
+
       if (detailVisible) {
         showMainScreenFromDetail();
         history.pushState(null, '', location.href);
+        backPressedOnce = false;
       } else if (addVisible) {
         showMainScreen();
         history.pushState(null, '', location.href);
+        backPressedOnce = false;
+      } else {
+        // 메인 화면에서 뒤로가기
+        if (backPressedOnce) {
+          // 두 번째 누르면 종료
+          history.back();
+        } else {
+          backPressedOnce = true;
+          history.pushState(null, '', location.href);
+          setTimeout(() => { backPressedOnce = false; }, 2000);
+        }
       }
     });
     history.pushState(null, '', location.href);
