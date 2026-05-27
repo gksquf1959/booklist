@@ -3597,6 +3597,12 @@
         `<span class="text-[10px] font-semibold px-2 py-0.5 rounded-full text-white" style="background:#9B77D1;">${t}</span>`
       ).join('');
 
+      document.getElementById('randomTitle').style.cursor = 'pointer';
+      document.getElementById('randomTitle').onclick = () => {
+        hideRandomModal();
+        showDetailScreen(book.title);
+      };
+      
       document.getElementById('randomModal').classList.remove('hidden');
       history.pushState({ modal: 'random' }, '', location.href);
     }
