@@ -1,4 +1,4 @@
-const CACHE_NAME = 'toreadlist-v2';
+const CACHE_NAME = 'toreadlist-v3';
 const ASSETS = [
   './index.html',
   './manifest.json',
@@ -15,7 +15,7 @@ self.addEventListener('install', event => {
   self.skipWaiting();
 });
 
-// 활성화: 이전 캐시 삭제
+// 활성화: 이전 캐시 전부 삭제
 self.addEventListener('activate', event => {
   event.waitUntil(
     caches.keys().then(keys =>
@@ -28,14 +28,21 @@ self.addEventListener('activate', event => {
   self.clients.claim();
 });
 
-// fetch: 캐시 우선, 없으면 네트워크
+// fetch: 네트워크 우선, 실패하면 캐시
 self.addEventListener('fetch', event => {
   event.respondWith(
-    caches.match(event.request).then(cached => {
-      return cached || fetch(event.request).catch(() => {
-        // 오프라인이고 캐시도 없으면 index.html 반환
-        return caches.match('./index.html');
-      });
-    })
+    fetch(event.request)
+      .then(response => {
+        // 네트워크 성공하면 캐시도 업데이트
+        const clone = response.clone();
+        caches.open(CACHE_NAME).then(cache => {
+          cache.put(event.request, clone);
+        });
+        return response;
+      })
+      .catch(() => {
+        // 오프라인이면 캐시에서
+        return caches.match(event.request) || caches.match('./index.html');
+      })
   );
 });
