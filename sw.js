@@ -1,4 +1,4 @@
-const CACHE_NAME = 'toreadlist-v1';
+const CACHE_NAME = 'toreadlist-v2';
 const ASSETS = [
   './index.html',
   './manifest.json',
