@@ -3658,12 +3658,51 @@
       };
       reader.readAsText(file);
     }
+// ═══════════════════════════════════════════════════════
+    //  안드로이드 뒤로가기 버튼 처리
+    // ═══════════════════════════════════════════════════════
+    let backPressedOnce = false;
 
+    window.addEventListener('popstate', (e) => {
+      const detailVisible  = document.getElementById('detailScreen').classList.contains('translate-y-0');
+      const addVisible     = document.getElementById('addScreen').classList.contains('translate-y-0');
+      const backupVisible  = !document.getElementById('backupModal').classList.contains('hidden');
+      const randomVisible  = !document.getElementById('randomModal').classList.contains('hidden');
+
+      if (backupVisible) {
+        document.getElementById('backupModal').classList.add('hidden');
+        history.pushState(null, '', location.href);
+        backPressedOnce = false;
+      } else if (randomVisible) {
+        document.getElementById('randomModal').classList.add('hidden');
+        history.pushState(null, '', location.href);
+        backPressedOnce = false;
+      } else if (detailVisible) {
+        showMainScreenFromDetail();
+        history.pushState(null, '', location.href);
+        backPressedOnce = false;
+      } else if (addVisible) {
+        showMainScreen();
+        history.pushState(null, '', location.href);
+        backPressedOnce = false;
+      } else {
+        if (backPressedOnce) {
+          history.back();
+        } else {
+          backPressedOnce = true;
+          history.pushState(null, '', location.href);
+          setTimeout(() => { backPressedOnce = false; }, 2000);
+        }
+      }
+    });
+    history.pushState(null, '', location.href);
     // ═══════════════════════════════════════════════════════
     //  초기 렌더링
     // ═══════════════════════════════════════════════════════
       const countEl = document.getElementById('bookCount');
       countEl.textContent = `전체: ${BOOKS.length}권`;
+ 
+    
     renderBooks(BOOKS);
   </script>
   <script>
