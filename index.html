@@ -3168,8 +3168,17 @@
     function loadBooks() {
       const saved = localStorage.getItem('BOOKS');
       if (saved) {
-        try { return JSON.parse(saved); }
-        catch(e) {}
+        try {
+          const savedBooks = JSON.parse(saved);
+          const savedTitles = new Set(savedBooks.map(b => b.title));
+          const newBooks = DEFAULT_BOOKS.filter(b => !savedTitles.has(b.title));
+          if (newBooks.length > 0) {
+            const merged = [...savedBooks, ...newBooks];
+            localStorage.setItem('BOOKS', JSON.stringify(merged));
+            return merged;
+          }
+          return savedBooks;
+        } catch(e) {}
       }
       const initial = DEFAULT_BOOKS.map(b => ({...b}));
       localStorage.setItem('BOOKS', JSON.stringify(initial));
