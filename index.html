@@ -3620,7 +3620,7 @@
     // ═══════════════════════════════════════════════════════
     //  초기 렌더링
     // ═══════════════════════════════════════════════════════
-    renderBooks(BOOKS);
+const countEl = document.getElementById('bookCount');       countEl.textContent = `전체: ${BOOKS.length}권`;       renderBooks(BOOKS);
   </script>
   <script>
     if ('serviceWorker' in navigator) {
