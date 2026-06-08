@@ -3820,38 +3820,31 @@
     let backPressedOnce = false;
 
     window.addEventListener('popstate', (e) => {
-      const detailVisible  = document.getElementById('detailScreen').classList.contains('translate-y-0');
-      const addVisible     = document.getElementById('addScreen').classList.contains('translate-y-0');
-      const backupVisible  = !document.getElementById('backupModal').classList.contains('hidden');
-      const randomVisible  = !document.getElementById('randomModal').classList.contains('hidden');
+  const detailVisible  = document.getElementById('detailScreen').classList.contains('translate-y-0');
+  const addVisible     = document.getElementById('addScreen').classList.contains('translate-y-0');
+  const backupVisible  = !document.getElementById('backupModal').classList.contains('hidden');
+  const randomVisible  = !document.getElementById('randomModal').classList.contains('hidden');
 
-      if (backupVisible) {
-        document.getElementById('backupModal').classList.add('hidden');
-        history.pushState(null, '', location.href);
-        backPressedOnce = false;
-      } else if (randomVisible) {
-        document.getElementById('randomModal').classList.add('hidden');
-        history.pushState(null, '', location.href);
-        backPressedOnce = false;
-      } else if (detailVisible) {
-        showMainScreenFromDetail();
-        history.pushState(null, '', location.href);
-        backPressedOnce = false;
-      } else if (addVisible) {
-        showMainScreen();
-        history.pushState(null, '', location.href);
-        backPressedOnce = false;
-      } else {
-        if (backPressedOnce) {
-          history.back();
-        } else {
-          backPressedOnce = true;
-          history.pushState(null, '', location.href);
-          setTimeout(() => { backPressedOnce = false; }, 2000);
-        }
-      }
-    });
-    history.pushState(null, '', location.href);
+  // 화면 닫기만 수행 (pushState 호출 없음!)
+  if (backupVisible) {
+    document.getElementById('backupModal').classList.add('hidden');
+  } else if (randomVisible) {
+    document.getElementById('randomModal').classList.add('hidden');
+  } else if (detailVisible) {
+    showMainScreenFromDetail();
+  } else if (addVisible) {
+    showMainScreen();
+  } else {
+    // 아무것도 안 켜져 있으면 종료 확인 로직
+    if (backPressedOnce) {
+      history.back();
+    } else {
+      backPressedOnce = true;
+      // 토스트 메시지 보여주기 로직...
+      setTimeout(() => { backPressedOnce = false; }, 2000);
+    }
+  }
+});
     // ═══════════════════════════════════════════════════════
     //  초기 렌더링
     // ═══════════════════════════════════════════════════════
