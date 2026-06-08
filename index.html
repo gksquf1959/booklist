@@ -3825,26 +3825,36 @@
   const backupVisible  = !document.getElementById('backupModal').classList.contains('hidden');
   const randomVisible  = !document.getElementById('randomModal').classList.contains('hidden');
 
-  // 화면 닫기만 수행 (pushState 호출 없음!)
-  if (backupVisible) {
-    document.getElementById('backupModal').classList.add('hidden');
-  } else if (randomVisible) {
-    document.getElementById('randomModal').classList.add('hidden');
-  } else if (detailVisible) {
+  // 1. 화면이 켜져 있으면 닫음
+  if (detailVisible) {
     showMainScreenFromDetail();
   } else if (addVisible) {
     showMainScreen();
+  } else if (backupVisible) {
+    document.getElementById('backupModal').classList.add('hidden');
+    history.pushState(null, '', location.href); // 닫은 후 히스토리 복구
+  } else if (randomVisible) {
+    document.getElementById('randomModal').classList.add('hidden');
+    history.pushState(null, '', location.href); // 닫은 후 히스토리 복구
   } else {
-    // 아무것도 안 켜져 있으면 종료 확인 로직
+    // 2. 켜진 게 없으면 종료 확인 로직
     if (backPressedOnce) {
-      history.back();
+      history.back(); // 진짜 종료
     } else {
       backPressedOnce = true;
-      // 토스트 메시지 보여주기 로직...
-      setTimeout(() => { backPressedOnce = false; }, 2000);
+      const toast = document.getElementById('toast');
+      if (toast) {
+        toast.classList.remove('hidden');
+        setTimeout(() => { toast.classList.add('hidden'); backPressedOnce = false; }, 2000);
+      } else {
+        setTimeout(() => { backPressedOnce = false; }, 2000);
+      }
     }
   }
 });
+
+// 초기화: 앱 시작 시 히스토리 스택을 하나 만들어 둠
+history.replaceState(null, '', location.href);
     // ═══════════════════════════════════════════════════════
     //  초기 렌더링
     // ═══════════════════════════════════════════════════════
