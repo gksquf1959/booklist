@@ -3281,6 +3281,7 @@
         overlay.classList.remove('hidden');
         setTimeout(() => overlay.classList.remove('opacity-0'), 10);
         menu.classList.remove('-translate-x-full');
+        history.pushState({ screen: 'menu' }, '', location.href);
       } else {
         // 닫기
         overlay.classList.add('opacity-0');
@@ -3494,6 +3495,7 @@
     function showAddScreen() {
       document.getElementById('addScreen').classList.remove('translate-y-full');
       document.getElementById('addScreen').classList.add('translate-y-0');
+      history.pushState({ screen: 'add' }, '', location.href);
     }
     function showMainScreen() {
       document.getElementById('addScreen').classList.remove('translate-y-0');
@@ -3589,6 +3591,7 @@
 
       document.getElementById('detailScreen').classList.remove('translate-y-full');
       document.getElementById('detailScreen').classList.add('translate-y-0');
+      history.pushState({ screen: 'detail' }, '', location.href);
     }
 
     function toggleEditMode() {
@@ -3824,24 +3827,27 @@
   const addVisible     = document.getElementById('addScreen').classList.contains('translate-y-0');
   const backupVisible  = !document.getElementById('backupModal').classList.contains('hidden');
   const randomVisible  = !document.getElementById('randomModal').classList.contains('hidden');
+  const menuOpen       = !document.getElementById('sideMenu').classList.contains('-translate-x-full');
 
-  // 1. 화면이 켜져 있으면 닫음
-  if (detailVisible) {
+  if (menuOpen) {
+    const overlay = document.getElementById('sideMenuOverlay');
+    overlay.classList.add('opacity-0');
+    document.getElementById('sideMenu').classList.add('-translate-x-full');
+    setTimeout(() => overlay.classList.add('hidden'), 300);
+  } else if (detailVisible) {
     showMainScreenFromDetail();
   } else if (addVisible) {
     showMainScreen();
   } else if (backupVisible) {
     document.getElementById('backupModal').classList.add('hidden');
-    history.pushState(null, '', location.href); // 닫은 후 히스토리 복구
   } else if (randomVisible) {
     document.getElementById('randomModal').classList.add('hidden');
-    history.pushState(null, '', location.href); // 닫은 후 히스토리 복구
   } else {
-    // 2. 켜진 게 없으면 종료 확인 로직
     if (backPressedOnce) {
-      history.back(); // 진짜 종료
+      history.back();
     } else {
       backPressedOnce = true;
+      history.pushState(null, '', location.href);
       const toast = document.getElementById('toast');
       if (toast) {
         toast.classList.remove('hidden');
