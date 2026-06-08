@@ -3748,7 +3748,7 @@
       };
       
       document.getElementById('randomModal').classList.remove('hidden');
-      location.hash = 'random';
+setTimeout(() => { location.hash = 'random'; }, 50);
     }
 
     function hideRandomModal(e) {
@@ -3766,10 +3766,10 @@
     //  백업 모달
     // ═══════════════════════════════════════════════════════
     function showBackupModal() {
-      document.getElementById('importResult').classList.add('hidden');
-      document.getElementById('backupModal').classList.remove('hidden');
-      location.hash = 'backup';
-    }
+  document.getElementById('importResult').classList.add('hidden');
+  document.getElementById('backupModal').classList.remove('hidden');
+  setTimeout(() => { location.hash = 'backup'; }, 50);
+}
 
     function hideBackupModal(e) {
       if (!e || e.target === document.getElementById('backupModal')) {
