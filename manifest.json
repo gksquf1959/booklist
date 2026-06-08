@@ -4,6 +4,7 @@
   "description": "내 독서 목록 앱",
   "start_url": "./index.html",
   "display": "standalone",
+  "display_override": ["standalone", "minimal-ui"],
   "background_color": "#EDE9F8",
   "theme_color": "#7B5EA7",
   "orientation": "portrait",
