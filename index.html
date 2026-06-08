@@ -320,7 +320,40 @@
         </div>
       </div>
     </div>
-    
+    <!-- 백업 모달 -->
+<div id="backupModal" class="modal-overlay hidden" onclick="hideBackupModal(event)">
+  <div class="modal-sheet" onclick="event.stopPropagation()">
+    <h2 class="text-lg font-bold text-gray-800 mb-4">💾 백업 / 복구</h2>
+    <div class="flex flex-col gap-3">
+      <button onclick="exportBackup()" class="w-full py-3 rounded-2xl text-white font-bold touch-active" style="background:#7B5EA7;">📤 JSON으로 내보내기</button>
+      <label class="w-full py-3 rounded-2xl text-center font-bold touch-active cursor-pointer" style="background:#EDE9F8; color:#7B5EA7;">
+        📥 JSON으로 불러오기
+        <input type="file" accept=".json" class="hidden" onchange="importBackup(event)" />
+      </label>
+      <p id="importResult" class="hidden text-center text-sm font-semibold mt-1"></p>
+      <button onclick="hideBackupModal()" class="w-full py-3 rounded-2xl font-bold text-gray-500 bg-gray-100 touch-active mt-2">닫기</button>
+    </div>
+  </div>
+</div>
+
+<!-- 랜덤 모달 -->
+<div id="randomModal" class="modal-overlay hidden" onclick="hideRandomModal(event)">
+  <div class="modal-sheet" onclick="event.stopPropagation()">
+    <h2 class="text-lg font-bold text-gray-800 mb-4">🎲 오늘 이 책 어때요?</h2>
+    <div id="randomCardContent" class="bg-p-light rounded-2xl p-4 flex flex-col gap-2 mb-4">
+      <p id="randomTitle" class="font-bold text-base text-gray-800"></p>
+      <p id="randomAuthor" class="text-xs text-gray-400"></p>
+      <p id="randomLibrary" class="text-xs text-gray-500"></p>
+      <p id="randomCallNo" class="text-xs text-gray-400"></p>
+      <div id="randomTags" class="flex flex-wrap gap-1 mt-1"></div>
+    </div>
+    <div class="flex flex-col gap-2">
+      <button onclick="showRandomCard()" class="w-full py-3 rounded-2xl text-white font-bold touch-active" style="background:#7B5EA7;">🔀 다른 책 추천</button>
+      <button onclick="goToLibraryFromRandom()" class="w-full py-3 rounded-2xl font-bold touch-active" style="background:#EDE9F8; color:#7B5EA7;">🏛️ 도서관 바로가기</button>
+      <button onclick="hideRandomModal()" class="w-full py-3 rounded-2xl font-bold text-gray-500 bg-gray-100 touch-active">닫기</button>
+    </div>
+  </div>
+</div>
     <div id="toast" class="hidden fixed bottom-10 left-1/2 -translate-x-1/2 bg-gray-800 text-white text-sm px-5 py-2.5 rounded-full z-[999]">한 번 더 누르면 종료됩니다</div>
     </div>
 
