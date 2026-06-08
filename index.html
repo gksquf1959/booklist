@@ -3855,88 +3855,45 @@
 // ═══════════════════════════════════════════════════════
     //  안드로이드 뒤로가기 버튼 처리
     // ═══════════════════════════════════════════════════════
-    let backPressedOnce = false;
+   let backPressedOnce = false;
 
-if ('navigation' in window) {
-  navigation.addEventListener('navigate', (e) => {
-    if (e.navigationType === 'traverse') {
-      e.intercept({ handler: () => {
-        const detailVisible = document.getElementById('detailScreen').classList.contains('translate-y-0');
-        const addVisible    = document.getElementById('addScreen').classList.contains('translate-y-0');
-        const backupVisible = !document.getElementById('backupModal').classList.contains('hidden');
-        const randomVisible = !document.getElementById('randomModal').classList.contains('hidden');
-        const menuOpen      = !document.getElementById('sideMenu').classList.contains('-translate-x-full');
+window.addEventListener('popstate', () => {
+  const detailVisible = document.getElementById('detailScreen').classList.contains('translate-y-0');
+  const addVisible    = document.getElementById('addScreen').classList.contains('translate-y-0');
+  const backupVisible = !document.getElementById('backupModal').classList.contains('hidden');
+  const randomVisible = !document.getElementById('randomModal').classList.contains('hidden');
+  const menuOpen      = !document.getElementById('sideMenu').classList.contains('-translate-x-full');
 
-        if (menuOpen) {
-          const overlay = document.getElementById('sideMenuOverlay');
-          overlay.classList.add('opacity-0');
-          document.getElementById('sideMenu').classList.add('-translate-x-full');
-          setTimeout(() => overlay.classList.add('hidden'), 300);
-        } else if (backupVisible) {
-          document.getElementById('backupModal').classList.add('hidden');
-        } else if (randomVisible) {
-          document.getElementById('randomModal').classList.add('hidden');
-        } else if (detailVisible) {
-          showMainScreenFromDetail();
-        } else if (addVisible) {
-          showMainScreen();
-        } else {
-          if (backPressedOnce) {
-            // 종료
-          } else {
-            backPressedOnce = true;
-            const toast = document.getElementById('toast');
-            if (toast) {
-              toast.classList.remove('hidden');
-              setTimeout(() => { toast.classList.add('hidden'); backPressedOnce = false; }, 2000);
-            } else {
-              setTimeout(() => { backPressedOnce = false; }, 2000);
-            }
-          }
-        }
-        return Promise.resolve();
-      }});
-    }
-  });
-} else {
-  window.addEventListener('popstate', () => {
-    const detailVisible = document.getElementById('detailScreen').classList.contains('translate-y-0');
-    const addVisible    = document.getElementById('addScreen').classList.contains('translate-y-0');
-    const backupVisible = !document.getElementById('backupModal').classList.contains('hidden');
-    const randomVisible = !document.getElementById('randomModal').classList.contains('hidden');
-    const menuOpen      = !document.getElementById('sideMenu').classList.contains('-translate-x-full');
-
-    if (menuOpen) {
-      const overlay = document.getElementById('sideMenuOverlay');
-      overlay.classList.add('opacity-0');
-      document.getElementById('sideMenu').classList.add('-translate-x-full');
-      setTimeout(() => overlay.classList.add('hidden'), 300);
-    } else if (backupVisible) {
-      document.getElementById('backupModal').classList.add('hidden');
-    } else if (randomVisible) {
-      document.getElementById('randomModal').classList.add('hidden');
-    } else if (detailVisible) {
-      showMainScreenFromDetail();
-    } else if (addVisible) {
-      showMainScreen();
+  if (menuOpen) {
+    const overlay = document.getElementById('sideMenuOverlay');
+    overlay.classList.add('opacity-0');
+    document.getElementById('sideMenu').classList.add('-translate-x-full');
+    setTimeout(() => overlay.classList.add('hidden'), 300);
+  } else if (backupVisible) {
+    document.getElementById('backupModal').classList.add('hidden');
+  } else if (randomVisible) {
+    document.getElementById('randomModal').classList.add('hidden');
+  } else if (detailVisible) {
+    showMainScreenFromDetail();
+  } else if (addVisible) {
+    showMainScreen();
+  } else {
+    if (backPressedOnce) {
+      history.back();
     } else {
-      if (backPressedOnce) {
-        history.back();
+      backPressedOnce = true;
+      history.pushState(null, '');
+      const toast = document.getElementById('toast');
+      if (toast) {
+        toast.classList.remove('hidden');
+        setTimeout(() => { toast.classList.add('hidden'); backPressedOnce = false; }, 2000);
       } else {
-        backPressedOnce = true;
-        history.pushState(null, '');
-        const toast = document.getElementById('toast');
-        if (toast) {
-          toast.classList.remove('hidden');
-          setTimeout(() => { toast.classList.add('hidden'); backPressedOnce = false; }, 2000);
-        } else {
-          setTimeout(() => { backPressedOnce = false; }, 2000);
-        }
+        setTimeout(() => { backPressedOnce = false; }, 2000);
       }
     }
-  });
-  history.pushState(null, '');
-}
+  }
+});
+history.pushState(null, '');
     // ═══════════════════════════════════════════════════════
     //  초기 렌더링
     // ═══════════════════════════════════════════════════════
