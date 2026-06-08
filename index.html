@@ -3273,22 +3273,20 @@
     //  사이드 메뉴(햄버거) 및 뷰 전환 로직
     // ═══════════════════════════════════════════════════════
     function toggleMenu() {
-      const menu = document.getElementById('sideMenu');
-      const overlay = document.getElementById('sideMenuOverlay');
-      
-      if (menu.classList.contains('-translate-x-full')) {
-        // 열기
-        overlay.classList.remove('hidden');
-        setTimeout(() => overlay.classList.remove('opacity-0'), 10);
-        menu.classList.remove('-translate-x-full');
-        location.hash = 'menu';
-      } else {
-        // 닫기
-        overlay.classList.add('opacity-0');
-        menu.classList.add('-translate-x-full');
-        setTimeout(() => overlay.classList.add('hidden'), 300);
-      }
-    }
+  const menu = document.getElementById('sideMenu');
+  const overlay = document.getElementById('sideMenuOverlay');
+  
+  if (menu.classList.contains('-translate-x-full')) {
+    overlay.classList.remove('hidden');
+    setTimeout(() => overlay.classList.remove('opacity-0'), 10);
+    menu.classList.remove('-translate-x-full');
+    history.pushState({ ui: 'menu' }, '');
+  } else {
+    overlay.classList.add('opacity-0');
+    menu.classList.add('-translate-x-full');
+    setTimeout(() => overlay.classList.add('hidden'), 300);
+  }
+}
 
     function changeView(view) {
       currentView = view;
@@ -3493,10 +3491,10 @@
     //  화면 전환
     // ═══════════════════════════════════════════════════════
     function showAddScreen() {
-      document.getElementById('addScreen').classList.remove('translate-y-full');
-      document.getElementById('addScreen').classList.add('translate-y-0');
-      location.hash = 'add';
-    }
+  document.getElementById('addScreen').classList.remove('translate-y-full');
+  document.getElementById('addScreen').classList.add('translate-y-0');
+  history.pushState({ ui: 'add' }, '');
+}
     function showMainScreen() {
       document.getElementById('addScreen').classList.remove('translate-y-0');
       document.getElementById('addScreen').classList.add('translate-y-full');
@@ -3589,10 +3587,10 @@
       editBtn.classList.add('bg-p-light','text-p-main');
       resetDeleteContainer();
 
-      document.getElementById('detailScreen').classList.remove('translate-y-full');
-      document.getElementById('detailScreen').classList.add('translate-y-0');
-      location.hash = 'detail';
-    }
+  document.getElementById('detailScreen').classList.remove('translate-y-full');
+  document.getElementById('detailScreen').classList.add('translate-y-0');
+  history.pushState({ ui: 'detail' }, '');
+}
 
     function toggleEditMode() {
       isEditMode = !isEditMode;
@@ -3747,9 +3745,9 @@
         showDetailScreen(book.title);
       };
       
-      document.getElementById('randomModal').classList.remove('hidden');
-setTimeout(() => { location.hash = 'random'; }, 50);
-    }
+       document.getElementById('randomModal').classList.remove('hidden');
+  history.pushState({ ui: 'random' }, '');
+}
 
     function hideRandomModal(e) {
       if (!e || e.target === document.getElementById('randomModal')) {
@@ -3765,10 +3763,10 @@ setTimeout(() => { location.hash = 'random'; }, 50);
     // ═══════════════════════════════════════════════════════
     //  백업 모달
     // ═══════════════════════════════════════════════════════
-    function showBackupModal() {
+function showBackupModal() {
   document.getElementById('importResult').classList.add('hidden');
   document.getElementById('backupModal').classList.remove('hidden');
-  setTimeout(() => { location.hash = 'backup'; }, 50);
+  history.pushState({ ui: 'backup' }, '');
 }
 
     function hideBackupModal(e) {
@@ -3822,7 +3820,7 @@ setTimeout(() => { location.hash = 'random'; }, 50);
     // ═══════════════════════════════════════════════════════
     let backPressedOnce = false;
 
-    window.addEventListener('hashchange', () => {
+window.addEventListener('popstate', () => {
   const detailVisible = document.getElementById('detailScreen').classList.contains('translate-y-0');
   const addVisible    = document.getElementById('addScreen').classList.contains('translate-y-0');
   const backupVisible = !document.getElementById('backupModal').classList.contains('hidden');
@@ -3834,20 +3832,20 @@ setTimeout(() => { location.hash = 'random'; }, 50);
     overlay.classList.add('opacity-0');
     document.getElementById('sideMenu').classList.add('-translate-x-full');
     setTimeout(() => overlay.classList.add('hidden'), 300);
-  } else if (detailVisible) {
-    showMainScreenFromDetail();
-  } else if (addVisible) {
-    showMainScreen();
   } else if (backupVisible) {
     document.getElementById('backupModal').classList.add('hidden');
   } else if (randomVisible) {
     document.getElementById('randomModal').classList.add('hidden');
+  } else if (detailVisible) {
+    showMainScreenFromDetail();
+  } else if (addVisible) {
+    showMainScreen();
   } else {
     if (backPressedOnce) {
-      // 진짜 종료 — 더 이상 뒤로 갈 히스토리 없으면 PWA가 닫힘
+      history.back();
     } else {
       backPressedOnce = true;
-      location.hash = '';
+      history.pushState(null, '');
       const toast = document.getElementById('toast');
       if (toast) {
         toast.classList.remove('hidden');
@@ -3860,7 +3858,7 @@ setTimeout(() => { location.hash = 'random'; }, 50);
 });
 
 // 초기화: 앱 시작 시 히스토리 스택을 하나 만들어 둠
-location.hash = '';
+history.pushState(null, '');
     // ═══════════════════════════════════════════════════════
     //  초기 렌더링
     // ═══════════════════════════════════════════════════════
