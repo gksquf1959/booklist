@@ -3273,20 +3273,21 @@
     //  사이드 메뉴(햄버거) 및 뷰 전환 로직
     // ═══════════════════════════════════════════════════════
     function toggleMenu() {
-  const menu = document.getElementById('sideMenu');
-  const overlay = document.getElementById('sideMenuOverlay');
-  
-  if (menu.classList.contains('-translate-x-full')) {
-    overlay.classList.remove('hidden');
-    setTimeout(() => overlay.classList.remove('opacity-0'), 10);
-    menu.classList.remove('-translate-x-full');
-    history.pushState({ ui: 'menu' }, '');
-  } else {
-    overlay.classList.add('opacity-0');
-    menu.classList.add('-translate-x-full');
-    setTimeout(() => overlay.classList.add('hidden'), 300);
-  }
-}
+      const menu = document.getElementById('sideMenu');
+      const overlay = document.getElementById('sideMenuOverlay');
+      
+      if (menu.classList.contains('-translate-x-full')) {
+        // 열기
+        overlay.classList.remove('hidden');
+        setTimeout(() => overlay.classList.remove('opacity-0'), 10);
+        menu.classList.remove('-translate-x-full');
+      } else {
+        // 닫기
+        overlay.classList.add('opacity-0');
+        menu.classList.add('-translate-x-full');
+        setTimeout(() => overlay.classList.add('hidden'), 300);
+      }
+    }
 
     function changeView(view) {
       currentView = view;
@@ -3491,10 +3492,9 @@
     //  화면 전환
     // ═══════════════════════════════════════════════════════
     function showAddScreen() {
-  document.getElementById('addScreen').classList.remove('translate-y-full');
-  document.getElementById('addScreen').classList.add('translate-y-0');
-  history.pushState({ ui: 'add' }, '');
-}
+      document.getElementById('addScreen').classList.remove('translate-y-full');
+      document.getElementById('addScreen').classList.add('translate-y-0');
+    }
     function showMainScreen() {
       document.getElementById('addScreen').classList.remove('translate-y-0');
       document.getElementById('addScreen').classList.add('translate-y-full');
@@ -3587,10 +3587,9 @@
       editBtn.classList.add('bg-p-light','text-p-main');
       resetDeleteContainer();
 
-  document.getElementById('detailScreen').classList.remove('translate-y-full');
-  document.getElementById('detailScreen').classList.add('translate-y-0');
-  history.pushState({ ui: 'detail' }, '');
-}
+      document.getElementById('detailScreen').classList.remove('translate-y-full');
+      document.getElementById('detailScreen').classList.add('translate-y-0');
+    }
 
     function toggleEditMode() {
       isEditMode = !isEditMode;
@@ -3745,9 +3744,9 @@
         showDetailScreen(book.title);
       };
       
-       document.getElementById('randomModal').classList.remove('hidden');
-  history.pushState({ ui: 'random' }, '');
-}
+      document.getElementById('randomModal').classList.remove('hidden');
+      history.pushState({ modal: 'random' }, '', location.href);
+    }
 
     function hideRandomModal(e) {
       if (!e || e.target === document.getElementById('randomModal')) {
@@ -3763,11 +3762,11 @@
     // ═══════════════════════════════════════════════════════
     //  백업 모달
     // ═══════════════════════════════════════════════════════
-function showBackupModal() {
-  document.getElementById('importResult').classList.add('hidden');
-  document.getElementById('backupModal').classList.remove('hidden');
-  history.pushState({ ui: 'backup' }, '');
-}
+    function showBackupModal() {
+      document.getElementById('importResult').classList.add('hidden');
+      document.getElementById('backupModal').classList.remove('hidden');
+      history.pushState({ modal: 'backup' }, '', location.href);
+    }
 
     function hideBackupModal(e) {
       if (!e || e.target === document.getElementById('backupModal')) {
@@ -3820,45 +3819,39 @@ function showBackupModal() {
     // ═══════════════════════════════════════════════════════
     let backPressedOnce = false;
 
-window.addEventListener('popstate', () => {
-  const detailVisible = document.getElementById('detailScreen').classList.contains('translate-y-0');
-  const addVisible    = document.getElementById('addScreen').classList.contains('translate-y-0');
-  const backupVisible = !document.getElementById('backupModal').classList.contains('hidden');
-  const randomVisible = !document.getElementById('randomModal').classList.contains('hidden');
-  const menuOpen      = !document.getElementById('sideMenu').classList.contains('-translate-x-full');
+    window.addEventListener('popstate', (e) => {
+      const detailVisible  = document.getElementById('detailScreen').classList.contains('translate-y-0');
+      const addVisible     = document.getElementById('addScreen').classList.contains('translate-y-0');
+      const backupVisible  = !document.getElementById('backupModal').classList.contains('hidden');
+      const randomVisible  = !document.getElementById('randomModal').classList.contains('hidden');
 
-  if (menuOpen) {
-    const overlay = document.getElementById('sideMenuOverlay');
-    overlay.classList.add('opacity-0');
-    document.getElementById('sideMenu').classList.add('-translate-x-full');
-    setTimeout(() => overlay.classList.add('hidden'), 300);
-  } else if (backupVisible) {
-    document.getElementById('backupModal').classList.add('hidden');
-  } else if (randomVisible) {
-    document.getElementById('randomModal').classList.add('hidden');
-  } else if (detailVisible) {
-    showMainScreenFromDetail();
-  } else if (addVisible) {
-    showMainScreen();
-  } else {
-    if (backPressedOnce) {
-      history.back();
-    } else {
-      backPressedOnce = true;
-      history.pushState(null, '');
-      const toast = document.getElementById('toast');
-      if (toast) {
-        toast.classList.remove('hidden');
-        setTimeout(() => { toast.classList.add('hidden'); backPressedOnce = false; }, 2000);
+      if (backupVisible) {
+        document.getElementById('backupModal').classList.add('hidden');
+        history.pushState(null, '', location.href);
+        backPressedOnce = false;
+      } else if (randomVisible) {
+        document.getElementById('randomModal').classList.add('hidden');
+        history.pushState(null, '', location.href);
+        backPressedOnce = false;
+      } else if (detailVisible) {
+        showMainScreenFromDetail();
+        history.pushState(null, '', location.href);
+        backPressedOnce = false;
+      } else if (addVisible) {
+        showMainScreen();
+        history.pushState(null, '', location.href);
+        backPressedOnce = false;
       } else {
-        setTimeout(() => { backPressedOnce = false; }, 2000);
+        if (backPressedOnce) {
+          history.back();
+        } else {
+          backPressedOnce = true;
+          history.pushState(null, '', location.href);
+          setTimeout(() => { backPressedOnce = false; }, 2000);
+        }
       }
-    }
-  }
-});
-
-// 초기화: 앱 시작 시 히스토리 스택을 하나 만들어 둠
-history.pushState(null, '');
+    });
+    history.pushState(null, '', location.href);
     // ═══════════════════════════════════════════════════════
     //  초기 렌더링
     // ═══════════════════════════════════════════════════════
