@@ -8,8 +8,6 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="apple-mobile-web-app-title" content="To Read List">
-  <link rel="manifest" href="manifest.json">
-  <link rel="icon" href="icon.png">
   <title>To Read List 📚</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
@@ -33,6 +31,7 @@
     button:active { opacity: 0.7; transform: scale(0.96); }
     .no-scrollbar::-webkit-scrollbar { display: none; }
     .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    
     .book-checkbox {
       width: 22px; height: 22px; min-width: 22px;
       border-radius: 5px; border: 2px solid #9B77D1;
@@ -40,10 +39,12 @@
       cursor: pointer; transition: background .15s;
     }
     .book-checkbox.checked { background: #7B5EA7; border-color: #7B5EA7; }
+    
     select {
       appearance: none; -webkit-appearance: none;
       background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24'%3E%3Cpath fill='%237B5EA7' d='M7 10l5 5 5-5z'/%3E%3C/svg%3E");
-      background-repeat: no-repeat; background-position: right 8px center; padding-right: 24px !important;
+      background-repeat: no-repeat; background-position: right 8px center;
+      padding-right: 24px !important;
     }
     select:disabled {
       background-color: #f3f4f6; color: #9ca3af; cursor: not-allowed; opacity: 0.6;
@@ -51,21 +52,17 @@
     }
     .input-card { background: white; border-radius: 20px; box-shadow: 0 4px 20px rgba(123,94,167,.10); }
     .fbtn {
-      font-size: 11px; font-weight: 600;
-      padding: 5px 10px; border-radius: 10px;
-      border: 1.5px solid #ddd6fe;
-      background: white; color: #7B5EA7;
+      font-size: 11px; font-weight: 600; padding: 5px 10px; border-radius: 10px;
+      border: 1.5px solid #ddd6fe; background: white; color: #7B5EA7;
       box-shadow: 0 1px 3px rgba(0,0,0,.06);
     }
     .fbtn.active { background: #7B5EA7; color: white; border-color: #7B5EA7; }
     #addTitle:focus::placeholder, #addCallNo:focus::placeholder,
     #detailTitle:focus::placeholder, #detailCallNo:focus::placeholder { color: transparent; }
 
-    /* 스크롤바 */
     #bookList::-webkit-scrollbar-thumb { background: #9B77D1; }
     #bookList { scrollbar-color: #9B77D1 transparent; }
 
-    /* 백업 모달 */
     .modal-overlay {
       position: fixed; inset: 0; background: rgba(0,0,0,0.45);
       z-index: 200; display: flex; align-items: flex-end; justify-content: center;
@@ -74,127 +71,115 @@
       background: white; border-radius: 24px 24px 0 0;
       width: 100%; max-width: 412px; padding: 28px 20px 48px;
     }
-
+    /* 노트 텍스트 줄임표 처리 (4줄) */
+    .text-clamp-4 {
+      display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; overflow: hidden;
+    }
   </style>
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
 </head>
-<body class="min-h-screen flex items-start justify-center">
+<body class="min-h-screen flex items-start justify-center relative">
 
-  <div class="w-full max-w-[412px] mx-auto min-h-screen relative overflow-hidden"
-       style="background:#EDE9F8;">
+  <div class="w-full max-w-[412px] mx-auto min-h-screen relative overflow-hidden" style="background:#EDE9F8;">
 
-    <!-- ===================== 메인 화면 ===================== -->
+    <div id="sideMenuOverlay" class="fixed inset-0 bg-black/40 z-[200] hidden transition-opacity opacity-0" onclick="toggleMenu()"></div>
+    <div id="sideMenu" class="fixed top-0 left-0 bottom-0 w-64 bg-white z-[201] transform -translate-x-full transition-transform duration-300 shadow-xl flex flex-col">
+      <div class="p-6 pb-4" style="background:#7B5EA7;">
+        <h2 class="text-xl font-bold text-white">메뉴</h2>
+      </div>
+      <div class="flex flex-col p-4 gap-2">
+        <button onclick="changeView('all')" id="menuBtnAll" class="text-left px-4 py-3 rounded-xl font-bold touch-active bg-p-light text-p-main">📚 전체 목록</button>
+        <button onclick="changeView('notes')" id="menuBtnNotes" class="text-left px-4 py-3 rounded-xl font-bold touch-active text-gray-600 hover:bg-gray-50">📝 독서 노트</button>
+      </div>
+    </div>
+
     <div id="mainScreen" class="flex flex-col h-screen">
 
-      <!-- 상단 고정 영역 -->
       <div class="flex-shrink-0" style="position:sticky;top:0;z-index:10;">
-
-      <!-- 상단 바 -->
-      <div class="flex items-center justify-between px-5 pt-7 pb-4"
-           style="background:#7B5EA7; border-radius:0 0 24px 24px;">
-        <h1 class="text-white text-2xl font-bold tracking-tight">To Read List 📚</h1>
-        <div class="flex items-center gap-2">
-          <button onclick="showBackupModal()"
-                  class="w-10 h-10 rounded-full flex items-center justify-center text-lg text-white shadow-md"
-                  style="background:rgba(255,255,255,.22);">💾</button>
-          <button onclick="showAddScreen()"
-                  class="w-10 h-10 rounded-full flex items-center justify-center text-2xl font-bold text-white shadow-md"
-                  style="background:rgba(255,255,255,.22);">+</button>
-        </div>
-      </div>
-
-      <!-- 검색 + 필터 -->
-      <div class="px-4 pt-4 pb-2 flex flex-col gap-2">
-        <div class="flex items-center gap-2 bg-white rounded-2xl px-4 py-2 shadow-sm">
-          <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="#9B77D1" stroke-width="2" viewBox="0 0 24 24">
-            <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
-          </svg>
-          <input id="searchInput" type="text" placeholder="제목 또는 지은이 검색"
-                 class="flex-1 outline-none text-sm text-gray-600 bg-transparent placeholder-gray-400"
-                 oninput="applyFilters()" />
-          <button id="searchClear" onclick="clearSearch()"
-                  class="hidden text-gray-300 hover:text-gray-500 text-lg leading-none">✕</button>
-        </div>
-
-        <div class="flex items-center gap-2 flex-wrap">
-          <span class="text-xs font-bold text-p-main shrink-0">도서관</span>
-          <select id="librarySelect"
-                  class="text-xs font-medium border border-p-200 rounded-xl px-3 py-1.5 text-p-main bg-white shadow-sm focus:outline-none"
-                  onchange="applyFilters()">
-            <option value="">전체</option>
-            <option>방아다리문학도서관</option>
-            <option>양천중앙도서관</option>
-            <option>개울건강도서관</option>
-            <option>신월음악도서관</option>
-            <option>갈산도서관</option>
-            <option>해맞이역사도서관</option>
-            <option>영어특성화도서관</option>
-            <option>목마교육도서관</option>
-            <option>미감도서관</option>
-            <option>모새미작은도서관</option>
-            <option>목1동 도서방</option>
-            <option>신월3북카페</option>
-          </select>
-          <div class="flex gap-1 ml-auto">
-            <button id="btnSosol" class="fbtn" onclick="toggleType('소설')">소설</button>
-            <button id="btnBimun" class="fbtn" onclick="toggleType('비문학')">비문학</button>
-          </div>
-        </div>
-
-        <div class="flex items-center gap-2 flex-wrap">
-          <span class="text-xs font-bold text-p-main shrink-0">장르</span>
-          <select id="genreSelect" disabled
-                  class="text-xs font-medium border border-p-200 rounded-xl px-3 py-1.5 text-p-main bg-white shadow-sm focus:outline-none"
-                  onchange="applyFilters()">
-            <option value="">전체</option>
-            <option>SF</option>
-            <option>추리/스릴러</option>
-            <option>세계문학</option>
-            <option>한국문학</option>
-          </select>
-          <div class="flex gap-1 ml-auto">
-            <button class="fbtn" onclick="showRandomCard()" style="background:#7B5EA7; border-color:#7B5EA7; padding:5px 8px;">
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                <polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/>
-              </svg>
+        <div class="flex items-center justify-between px-5 pt-7 pb-4" style="background:#7B5EA7; border-radius:0 0 24px 24px;">
+          <div class="flex items-center gap-3">
+            <button onclick="toggleMenu()" class="w-9 h-9 flex items-center justify-center rounded-full touch-active" style="background:rgba(255,255,255,.22);">
+              <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16"/></svg>
             </button>
-            <button id="btnWandok"  class="fbtn" onclick="toggleStatus('완독')">완독</button>
-            <button id="btnReading" class="fbtn" onclick="toggleStatus('읽는중')">읽는중</button>
-            <button id="btnUnread"  class="fbtn" onclick="toggleStatus('안읽음')">안읽음</button>
+            <h1 id="mainTitle" class="text-white text-2xl font-bold tracking-tight">To Read List 📚</h1>
+          </div>
+          <div class="flex items-center gap-2">
+            <button onclick="showBackupModal()" class="w-10 h-10 rounded-full flex items-center justify-center text-lg text-white shadow-md touch-active" style="background:rgba(255,255,255,.22);">💾</button>
+            <button onclick="showAddScreen()" class="w-10 h-10 rounded-full flex items-center justify-center text-2xl font-bold text-white shadow-md touch-active" style="background:rgba(255,255,255,.22);">+</button>
+          </div>
+        </div>
+
+        <div class="px-4 pt-4 pb-2 flex flex-col gap-2">
+          <div class="flex items-center gap-2 bg-white rounded-2xl px-4 py-2 shadow-sm">
+            <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="#9B77D1" stroke-width="2" viewBox="0 0 24 24">
+              <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+            </svg>
+            <input id="searchInput" type="text" placeholder="제목 또는 지은이 검색" class="flex-1 outline-none text-sm text-gray-600 bg-transparent placeholder-gray-400" oninput="applyFilters()" />
+            <button id="searchClear" onclick="clearSearch()" class="hidden text-gray-300 hover:text-gray-500 text-lg leading-none">✕</button>
+          </div>
+
+          <div id="filterArea" class="flex flex-col gap-2 transition-all duration-300">
+            <div class="flex items-center gap-2 flex-wrap">
+              <span class="text-xs font-bold text-p-main shrink-0">도서관</span>
+              <select id="librarySelect" class="text-xs font-medium border border-p-200 rounded-xl px-3 py-1.5 text-p-main bg-white shadow-sm focus:outline-none" onchange="applyFilters()">
+                <option value="">전체</option>
+                <option>방아다리문학도서관</option>
+                <option>양천중앙도서관</option>
+                <option>개울건강도서관</option>
+                <option>신월음악도서관</option>
+                <option>갈산도서관</option>
+                <option>해맞이역사도서관</option>
+                <option>영어특성화도서관</option>
+                <option>목마교육도서관</option>
+                <option>미감도서관</option>
+                <option>모새미작은도서관</option>
+                <option>목1동 도서방</option>
+                <option>신월3북카페</option>
+              </select>
+              <div class="flex gap-1 ml-auto">
+                <button id="btnSosol" class="fbtn" onclick="toggleType('소설')">소설</button>
+                <button id="btnBimun" class="fbtn" onclick="toggleType('비문학')">비문학</button>
+              </div>
+            </div>
+            <div class="flex items-center gap-2 flex-wrap">
+              <span class="text-xs font-bold text-p-main shrink-0">장르</span>
+              <select id="genreSelect" disabled class="text-xs font-medium border border-p-200 rounded-xl px-3 py-1.5 text-p-main bg-white shadow-sm focus:outline-none" onchange="applyFilters()">
+                <option value="">전체</option>
+                <option>SF</option>
+                <option>추리/스릴러</option>
+                <option>세계문학</option>
+                <option>한국문학</option>
+              </select>
+              <div class="flex gap-1 ml-auto">
+                <button class="fbtn" onclick="showRandomCard()" style="background:#7B5EA7; border-color:#7B5EA7; padding:5px 8px;">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/>
+                  </svg>
+                </button>
+                <button id="btnWandok"  class="fbtn" onclick="toggleStatus('완독')">완독</button>
+                <button id="btnReading" class="fbtn" onclick="toggleStatus('읽는중')">읽는중</button>
+                <button id="btnUnread"  class="fbtn" onclick="toggleStatus('안읽음')">안읽음</button>
+              </div>
+            </div>
           </div>
         </div>
       </div>
-
-      </div><!-- /상단 고정 영역 -->
       
-      <!-- 권수 표기 -->
       <div id="bookCount" class="px-5 pb-1 text-right" style="font-size:10px; color:#7B5EA7; font-weight:600;"></div>
       
-      <!-- 책 목록 -->
-      <div id="bookList"
-           class="flex-1 overflow-y-auto px-4 pb-2 flex flex-col gap-2 pt-1">
-      </div>
+      <div id="bookList" class="flex-1 overflow-y-auto px-4 pb-2 pt-1 no-scrollbar"></div>
+      
       <div id="emptyMsg" class="hidden flex-col items-center justify-center text-gray-400" style="flex:1;overflow-y:auto;">
         <p class="text-3xl mb-2">🔍</p>
-        <p class="text-sm">검색 결과가 없습니다.</p>
+        <p class="text-sm">결과가 없습니다.</p>
       </div>
-
-
-
     </div>
-    <!-- ==================== /메인 화면 ==================== -->
 
 
-    <!-- ===================== 입력 화면 ===================== -->
     <div id="addScreen" class="absolute inset-0 bg-[#EDE9F8] z-50 transform translate-y-full transition-transform duration-300 ease-out flex flex-col overflow-y-auto no-scrollbar">
-      <div class="flex items-center gap-3 px-5 pt-7 pb-4"
-           style="background:#7B5EA7; border-radius:0 0 24px 24px;">
-        <button onclick="showMainScreen()"
-                class="w-9 h-9 flex items-center justify-center rounded-full"
-                style="background:rgba(255,255,255,.22);">
-          <svg class="w-5 h-5 text-white" fill="none" stroke="white" stroke-width="2.5" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/>
-          </svg>
+      <div class="flex items-center gap-3 px-5 pt-7 pb-4" style="background:#7B5EA7; border-radius:0 0 24px 24px;">
+        <button onclick="showMainScreen()" class="w-9 h-9 flex items-center justify-center rounded-full touch-active" style="background:rgba(255,255,255,.22);">
+          <svg class="w-5 h-5 text-white" fill="none" stroke="white" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/></svg>
         </button>
         <h1 class="text-white text-2xl font-bold tracking-tight">Read more? 📝</h1>
       </div>
@@ -203,22 +188,18 @@
         <div class="input-card p-5 flex flex-col gap-5">
           <div>
             <p class="text-sm font-bold text-gray-700 mb-1">책 제목</p>
-            <input id="addTitle" type="text" placeholder="제목을 입력하세요"
-                   class="w-full text-sm text-gray-700 border-0 border-b border-gray-200 pb-2 outline-none bg-transparent placeholder-gray-400 focus:border-purple-400 transition-colors" />
+            <input id="addTitle" type="text" placeholder="제목을 입력하세요" class="w-full text-sm text-gray-700 border-0 border-b border-gray-200 pb-2 outline-none bg-transparent placeholder-gray-400 focus:border-purple-400 transition-colors" />
           </div>
           <div>
             <p class="text-sm font-bold text-gray-700 mb-2">구분</p>
             <div class="flex gap-2">
-              <button id="addBtnSosol" class="flex-1 py-2 rounded-xl text-sm font-semibold border transition-all fbtn active"
-                      onclick="selectAddType('소설')">소설</button>
-              <button id="addBtnBimun" class="flex-1 py-2 rounded-xl text-sm font-semibold border transition-all fbtn"
-                      onclick="selectAddType('비문학')">비문학</button>
+              <button id="addBtnSosol" class="flex-1 py-2 rounded-xl text-sm font-semibold border transition-all fbtn active" onclick="selectAddType('소설')">소설</button>
+              <button id="addBtnBimun" class="flex-1 py-2 rounded-xl text-sm font-semibold border transition-all fbtn" onclick="selectAddType('비문학')">비문학</button>
             </div>
           </div>
           <div>
             <p class="text-sm font-bold text-gray-700 mb-1">장르 선택</p>
-            <select id="addGenre"
-                    class="w-full text-sm text-gray-700 border border-gray-200 rounded-xl px-3 py-2.5 bg-white outline-none focus:border-purple-400 transition-colors">
+            <select id="addGenre" class="w-full text-sm text-gray-700 border border-gray-200 rounded-xl px-3 py-2.5 bg-white outline-none focus:border-purple-400 transition-colors">
               <option value="">장르를 선택하세요</option>
               <option>SF</option>
               <option>추리/스릴러</option>
@@ -228,8 +209,7 @@
           </div>
           <div>
             <p class="text-sm font-bold text-gray-700 mb-1">소장 도서관</p>
-            <select id="addLibrary" onchange="handleLibraryChange('addLibrary','addLibraryInput')"
-                    class="w-full text-sm text-gray-700 border border-gray-200 rounded-xl px-3 py-2.5 bg-white outline-none focus:border-purple-400 transition-colors">
+            <select id="addLibrary" onchange="handleLibraryChange('addLibrary','addLibraryInput')" class="w-full text-sm text-gray-700 border border-gray-200 rounded-xl px-3 py-2.5 bg-white outline-none focus:border-purple-400 transition-colors">
               <option value="">도서관을 선택하세요</option>
               <option>방아다리문학도서관</option>
               <option>양천중앙도서관</option>
@@ -245,24 +225,20 @@
               <option>신월3북카페</option>
               <option value="__new__">+ 도서관 추가</option>
             </select>
-            <input id="addLibraryInput" type="text" placeholder="도서관 이름을 입력하세요"
-                   class="hidden mt-2 w-full text-sm text-gray-700 border border-gray-200 rounded-xl px-3 py-2.5 bg-white outline-none focus:border-purple-400 transition-colors" />
+            <input id="addLibraryInput" type="text" placeholder="도서관 이름을 입력하세요" class="hidden mt-2 w-full text-sm text-gray-700 border border-gray-200 rounded-xl px-3 py-2.5 bg-white outline-none focus:border-purple-400 transition-colors" />
           </div>
           <div>
             <p class="text-sm font-bold text-gray-700 mb-1">위치 번호</p>
-            <input id="addCallNo" type="text" placeholder="예: 813.7-김63이"
-                   class="w-full text-sm text-gray-700 border-0 border-b border-gray-200 pb-2 outline-none bg-transparent placeholder-gray-400 focus:border-purple-400 transition-colors" />
+            <input id="addCallNo" type="text" placeholder="예: 813.7-김63이" class="w-full text-sm text-gray-700 border-0 border-b border-gray-200 pb-2 outline-none bg-transparent placeholder-gray-400 focus:border-purple-400 transition-colors" />
           </div>
         </div>
       </div>
       <div class="px-4 pt-2 pb-8">
-        <button onclick="addBook()" class="w-full py-4 rounded-2xl text-white text-xl font-bold shadow-lg tracking-wide"
-                style="background:#7B5EA7;">Read!</button>
+        <button onclick="addBook()" class="w-full py-4 rounded-2xl text-white text-xl font-bold shadow-lg tracking-wide touch-active" style="background:#7B5EA7;">Read!</button>
       </div>
     </div>
 
-    <!-- ===================== 상세/수정 화면 ===================== -->
-<div id="detailScreen" class="absolute inset-0 bg-[#EDE9F8] z-50 transform translate-y-full transition-transform duration-300 ease-out flex flex-col overflow-hidden">
+    <div id="detailScreen" class="absolute inset-0 bg-[#EDE9F8] z-50 transform translate-y-full transition-transform duration-300 ease-out flex flex-col overflow-hidden">
       <div class="flex-shrink-0 flex items-center gap-3 px-5 pt-7 pb-4" style="background:#7B5EA7; border-radius:0 0 24px 24px; z-index:10;">
         <button onclick="showMainScreenFromDetail()" class="w-9 h-9 flex items-center justify-center rounded-full touch-active" style="background:rgba(255,255,255,.22);">
           <svg class="w-5 h-5 text-white" fill="none" stroke="white" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/></svg>
@@ -343,65 +319,8 @@
         </div>
       </div>
     </div>
-
-    <!-- ===================== 랜덤 카드 모달 ===================== -->
-    <div id="randomModal" class="hidden modal-overlay" onclick="hideRandomModal(event)">
-      <div class="modal-sheet" onclick="event.stopPropagation()">
-        <div class="flex items-center justify-between mb-4">
-          <h2 class="text-base font-bold text-gray-800">🎲 오늘 이 책 어때요?</h2>
-          <button onclick="showRandomCard()" class="text-xs font-semibold px-3 py-1 rounded-lg touch-active" style="background:#EDE9F8; color:#7B5EA7;">다시 뽑기</button>
-        </div>
-
-        <div id="randomCardContent" class="bg-[#EDE9F8] rounded-2xl p-4 flex flex-col gap-2 mb-6">
-          <p id="randomTitle" class="font-bold text-base text-gray-800 leading-snug"></p>
-          <p id="randomAuthor" class="text-xs text-gray-400"></p>
-          <p id="randomLibrary" class="text-xs text-gray-400"></p>
-          <p id="randomCallNo" class="text-xs text-gray-400"></p>
-          <div id="randomTags" class="flex flex-wrap gap-1 mt-1"></div>
-        </div>
-
-        <div class="flex gap-2">
-          <button onclick="goToLibraryFromRandom()" 
-                  class="flex-1 py-3 rounded-2xl text-sm font-bold touch-active"
-                  style="background:#EDE9F8; color:#7B5EA7; border:1.5px solid #ddd6fe;">📍 도서관 이동</button>
-          <button onclick="hideRandomModal()"
-                  class="flex-1 py-3 rounded-2xl text-white text-sm font-bold touch-active"
-                  style="background:#7B5EA7;">닫기</button>
-        </div>
-      </div>
+    
     </div>
-
-    <!-- ===================== 백업 모달 ===================== -->
-    <div id="backupModal" class="hidden modal-overlay" onclick="hideBackupModal(event)">
-      <div class="modal-sheet" onclick="event.stopPropagation()">
-        <div class="flex items-center justify-between mb-6">
-          <h2 class="text-lg font-bold text-gray-800">💾 데이터 백업</h2>
-          <button onclick="hideBackupModal()" class="text-gray-400 text-xl leading-none">✕</button>
-        </div>
-
-        <p class="text-sm text-gray-500 mb-6 leading-relaxed">
-          현재 독서 상태(완독, 읽는중 등)가 저장된<br>
-          JSON 파일을 내보내거나 불러올 수 있어요.
-        </p>
-
-        <div class="flex flex-col gap-3">
-          <button onclick="exportBackup()"
-                  class="w-full py-4 rounded-2xl text-white text-base font-bold shadow-md touch-active"
-                  style="background:#7B5EA7;">
-            📤 내보내기 (JSON 저장)
-          </button>
-          <label class="w-full py-4 rounded-2xl text-base font-bold shadow-md touch-active text-center cursor-pointer"
-                 style="background:#EDE9F8; color:#7B5EA7; border: 1.5px solid #ddd6fe;">
-            📥 불러오기 (JSON 복구)
-            <input type="file" accept=".json" class="hidden" onchange="importBackup(event)">
-          </label>
-        </div>
-
-        <p id="importResult" class="hidden text-center text-sm font-semibold mt-4"></p>
-      </div>
-    </div>
-
-  </div>
 
   <script>
     // ═══════════════════════════════════════════════════════
@@ -3316,7 +3235,7 @@
 ];
 
     // ═══════════════════════════════════════════════════════
-    //  localStorage 연동
+    //  localStorage 연동 및 상태
     // ═══════════════════════════════════════════════════════
     function loadBooks() {
       const saved = localStorage.getItem('BOOKS');
@@ -3344,13 +3263,60 @@
 
     let BOOKS = loadBooks();
 
-    // ═══════════════════════════════════════════════════════
-    //  필터 상태
-    // ═══════════════════════════════════════════════════════
     const F = { search: '', library: '', type: '', genre: '', status: '' };
     let isEditMode = false;
     let editingBookTitle = '';
     let currentDetailStatus = '안읽음';
+    let currentView = 'all'; // 'all' 또는 'notes'
+
+    // ═══════════════════════════════════════════════════════
+    //  사이드 메뉴(햄버거) 및 뷰 전환 로직
+    // ═══════════════════════════════════════════════════════
+    function toggleMenu() {
+      const menu = document.getElementById('sideMenu');
+      const overlay = document.getElementById('sideMenuOverlay');
+      
+      if (menu.classList.contains('-translate-x-full')) {
+        // 열기
+        overlay.classList.remove('hidden');
+        setTimeout(() => overlay.classList.remove('opacity-0'), 10);
+        menu.classList.remove('-translate-x-full');
+      } else {
+        // 닫기
+        overlay.classList.add('opacity-0');
+        menu.classList.add('-translate-x-full');
+        setTimeout(() => overlay.classList.add('hidden'), 300);
+      }
+    }
+
+    function changeView(view) {
+      currentView = view;
+      toggleMenu(); // 메뉴창 닫기
+      
+      const btnAll = document.getElementById('menuBtnAll');
+      const btnNotes = document.getElementById('menuBtnNotes');
+      const filterArea = document.getElementById('filterArea');
+      const searchInput = document.getElementById('searchInput');
+      const mainTitle = document.getElementById('mainTitle');
+
+      if (view === 'all') {
+        btnAll.className = 'text-left px-4 py-3 rounded-xl font-bold touch-active bg-p-light text-p-main';
+        btnNotes.className = 'text-left px-4 py-3 rounded-xl font-bold touch-active text-gray-600 hover:bg-gray-50';
+        filterArea.classList.remove('hidden');
+        searchInput.placeholder = '제목 또는 지은이 검색';
+        mainTitle.textContent = 'To Read List 📚';
+      } else {
+        btnAll.className = 'text-left px-4 py-3 rounded-xl font-bold touch-active text-gray-600 hover:bg-gray-50';
+        btnNotes.className = 'text-left px-4 py-3 rounded-xl font-bold touch-active bg-p-light text-p-main';
+        filterArea.classList.add('hidden'); // 필터 영역 숨김
+        searchInput.placeholder = '제목 또는 노트 내용 검색';
+        mainTitle.textContent = '독서 노트 📝';
+      }
+      
+      document.getElementById('searchInput').value = '';
+      F.search = '';
+      applyFilters();
+    }
 
     // ═══════════════════════════════════════════════════════
     //  렌더링
@@ -3370,75 +3336,91 @@
       emptyMsg.classList.add('hidden');
       emptyMsg.classList.remove('flex');
 
-      list.forEach(book => {
-        const tagsList = [book.type === '소설' ? '#소설' : '#비문학',
-                          ...book.genres.map(g => '#' + g)];
-        const tagsHtml = tagsList.map(t =>
-          `<span class="text-[10px] font-semibold px-2 py-0.5 rounded-full text-white"
-                 style="background:#9B77D1;">${t}</span>`
-        ).join('');
+      if (currentView === 'all') {
+        // [전체 목록] 1열 가로 카드 리스트
+        container.className = 'flex-1 overflow-y-auto px-4 pb-2 flex flex-col gap-2 pt-1 no-scrollbar';
+        list.forEach(book => {
+          const tagsList = [book.type === '소설' ? '#소설' : '#비문학', ...book.genres.map(g => '#' + g)];
+          const tagsHtml = tagsList.map(t =>
+            `<span class="text-[10px] font-semibold px-2 py-0.5 rounded-full text-white" style="background:#9B77D1;">${t}</span>`
+          ).join('');
 
-        const isChecked = book.status === '완독';
-        const checkHtml = isChecked
-          ? `<svg class="w-3.5 h-3.5 text-white" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24">
-               <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
-             </svg>` : '';
-        const cbStyle = book.status === '읽는중' ? 'border-color:#f59e0b;' : '';
+          const isChecked = book.status === '완독';
+          const checkHtml = isChecked
+            ? `<svg class="w-3.5 h-3.5 text-white" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>` : '';
+          const cbStyle = book.status === '읽는중' ? 'border-color:#f59e0b;' : '';
 
-        const card = document.createElement('div');
-        card.className = 'bg-white rounded-2xl px-4 py-3 shadow-sm flex items-start gap-3 touch-active cursor-pointer';
-        card.innerHTML = `
-          <div class="book-checkbox ${isChecked ? 'checked' : ''} mt-0.5" style="${cbStyle}">
-            ${checkHtml}
-            ${book.status === '읽는중'
-              ? '<span style="width:8px;height:8px;border-radius:50%;background:#f59e0b;display:block;"></span>'
-              : ''}
-          </div>
-          <div class="flex-1 min-w-0">
-            <p class="font-bold text-sm text-gray-800 leading-snug">${book.title}</p>
-            <p class="text-xs text-gray-400 mt-0.5">[${book.library} - ${book.callNo}]</p>
-            <p class="text-xs text-gray-300 mt-0.5">${book.author}</p>
-          </div>
-          <div class="flex flex-col items-end gap-1 shrink-0">${tagsHtml}</div>
-        `;
-
-        card.addEventListener('click', () => showDetailScreen(book.title));
-// 목록에서는 클릭만 가능하도록 변경
-        card.addEventListener('click', () => showDetailScreen(book.title));
-        container.appendChild(card);
-      });
-    }
-
-    function cycleStatus(title) {
-      const book = BOOKS.find(b => b.title === title);
-      if (!book) return;
-      const cycle = ['안읽음', '읽는중', '완독'];
-      book.status = cycle[(cycle.indexOf(book.status) + 1) % 3];
-      saveBooks();
-      applyFilters();
+          const card = document.createElement('div');
+          card.className = 'bg-white rounded-2xl px-4 py-3 shadow-sm flex items-start gap-3 touch-active cursor-pointer';
+          card.innerHTML = `
+            <div class="book-checkbox ${isChecked ? 'checked' : ''} mt-0.5" style="${cbStyle}">
+              ${checkHtml}
+              ${book.status === '읽는중' ? '<span style="width:8px;height:8px;border-radius:50%;background:#f59e0b;display:block;"></span>' : ''}
+            </div>
+            <div class="flex-1 min-w-0">
+              <p class="font-bold text-sm text-gray-800 leading-snug">${book.title}</p>
+              <p class="text-xs text-gray-400 mt-0.5">[${book.library} - ${book.callNo}]</p>
+              <p class="text-xs text-gray-300 mt-0.5">${book.author}</p>
+            </div>
+            <div class="flex flex-col items-end gap-1 shrink-0">${tagsHtml}</div>
+          `;
+          card.addEventListener('click', () => showDetailScreen(book.title));
+          container.appendChild(card);
+        });
+      } else {
+        // [독서 노트] 2열 세로 카드 그리드
+        container.className = 'flex-1 overflow-y-auto px-4 pb-2 grid grid-cols-2 gap-3 pt-1 items-start content-start no-scrollbar';
+        list.forEach(book => {
+          const card = document.createElement('div');
+          card.className = 'bg-white rounded-2xl p-4 shadow-sm flex flex-col gap-2 touch-active cursor-pointer h-40'; // 높이 고정 (h-40)
+          card.innerHTML = `
+            <div class="flex items-start gap-1">
+              <span class="text-sm">📖</span>
+              <p class="font-bold text-sm text-gray-800 leading-snug truncate flex-1">${book.title}</p>
+            </div>
+            <div class="w-full h-[1px] bg-gray-100 my-1"></div>
+            <p class="text-xs text-gray-600 leading-relaxed text-clamp-4 flex-1">"${book.note}"</p>
+          `;
+          card.addEventListener('click', () => showDetailScreen(book.title));
+          container.appendChild(card);
+        });
+      }
     }
 
     function applyFilters() {
       F.search  = document.getElementById('searchInput').value.trim().toLowerCase();
-      F.library = document.getElementById('librarySelect').value;
-      F.genre   = document.getElementById('genreSelect').value;
       document.getElementById('searchClear').classList.toggle('hidden', F.search === '');
 
       const result = BOOKS.filter(b => {
-        if (F.search  && !b.title.toLowerCase().includes(F.search)
-                      && !b.author.toLowerCase().includes(F.search)) return false;
-        if (F.library && b.library !== F.library)    return false;
-        if (F.type    && b.type    !== F.type)        return false;
-        if (F.genre   && !b.genres.includes(F.genre)) return false;
-        if (F.status  && b.status  !== F.status)      return false;
-        return true;
+        if (currentView === 'notes') {
+          // 노트 화면: 노트가 있는 책만, 그리고 검색은 제목과 노트 내용에서
+          if (!b.note || b.note.trim() === '') return false;
+          if (F.search && !b.title.toLowerCase().includes(F.search) && !b.note.toLowerCase().includes(F.search)) return false;
+          return true;
+        } else {
+          // 전체 목록 화면: 기존 로직
+          F.library = document.getElementById('librarySelect').value;
+          F.genre   = document.getElementById('genreSelect').value;
+          
+          if (F.search  && !b.title.toLowerCase().includes(F.search) && !(b.author || '').toLowerCase().includes(F.search)) return false;
+          if (F.library && b.library !== F.library)    return false;
+          if (F.type    && b.type    !== F.type)       return false;
+          if (F.genre   && !b.genres.includes(F.genre)) return false;
+          if (F.status  && b.status  !== F.status)     return false;
+          return true;
+        }
       });
-      const total = BOOKS.length;
+      
       const countEl = document.getElementById('bookCount');
-      if (F.search || F.library || F.type || F.genre || F.status) {
-        countEl.textContent = `검색 결과: ${result.length}권 / 총 ${total}권`;
+      if (currentView === 'notes') {
+        countEl.textContent = `노트 작성됨: ${result.length}권`;
       } else {
-        countEl.textContent = `전체: ${total}권`;
+        const total = BOOKS.length;
+        if (F.search || F.library || F.type || F.genre || F.status) {
+          countEl.textContent = `검색 결과: ${result.length}권 / 총 ${total}권`;
+        } else {
+          countEl.textContent = `전체: ${total}권`;
+        }
       }
       renderBooks(result);
     }
