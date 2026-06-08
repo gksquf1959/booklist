@@ -262,42 +262,33 @@
     </div>
 
     <!-- ===================== 상세/수정 화면 ===================== -->
-    <div id="detailScreen" class="absolute inset-0 bg-[#EDE9F8] z-50 transform translate-y-full transition-transform duration-300 ease-out flex flex-col overflow-y-auto no-scrollbar">
-      <div class="flex items-center gap-3 px-5 pt-7 pb-4"
-           style="background:#7B5EA7; border-radius:0 0 24px 24px;">
-        <button onclick="showMainScreenFromDetail()"
-                class="w-9 h-9 flex items-center justify-center rounded-full"
-                style="background:rgba(255,255,255,.22);">
-          <svg class="w-5 h-5 text-white" fill="none" stroke="white" stroke-width="2.5" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/>
-          </svg>
+<div id="detailScreen" class="absolute inset-0 bg-[#EDE9F8] z-50 transform translate-y-full transition-transform duration-300 ease-out flex flex-col overflow-hidden">
+      <div class="flex-shrink-0 flex items-center gap-3 px-5 pt-7 pb-4" style="background:#7B5EA7; border-radius:0 0 24px 24px; z-index:10;">
+        <button onclick="showMainScreenFromDetail()" class="w-9 h-9 flex items-center justify-center rounded-full touch-active" style="background:rgba(255,255,255,.22);">
+          <svg class="w-5 h-5 text-white" fill="none" stroke="white" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/></svg>
         </button>
         <h1 class="text-white text-2xl font-bold tracking-tight">Read more? 📝</h1>
       </div>
 
-      <div class="px-4 pt-5 pb-4">
-        <div class="input-card p-5 flex flex-col gap-5">
+      <div class="flex-1 overflow-y-auto px-4 pt-5 pb-4 no-scrollbar">
+        <div class="input-card p-5 flex flex-col gap-5 min-h-full">
           <div>
             <div class="flex items-center justify-between mb-1">
               <p class="text-sm font-bold text-gray-700">책 제목</p>
               <button id="editBtn" onclick="toggleEditMode()" class="text-xs font-semibold text-p-main bg-p-light px-2.5 py-1 rounded-lg touch-active">편집</button>
             </div>
-            <input id="detailTitle" type="text" disabled
-                   class="w-full text-sm text-gray-700 border-0 border-b border-gray-200 pb-2 outline-none bg-transparent placeholder-gray-400 focus:border-purple-400 transition-colors" />
+            <input id="detailTitle" type="text" disabled class="w-full text-sm text-gray-700 border-0 border-b border-gray-200 pb-2 outline-none bg-transparent placeholder-gray-400 focus:border-purple-400 transition-colors" />
           </div>
           <div>
             <p class="text-sm font-bold text-gray-700 mb-2">구분</p>
             <div class="flex gap-2">
-              <button id="detailBtnSosol" class="flex-1 py-2 rounded-xl text-sm font-semibold border transition-all fbtn active pointer-events-none opacity-60"
-                      onclick="selectDetailType('소설')">소설</button>
-              <button id="detailBtnBimun" class="flex-1 py-2 rounded-xl text-sm font-semibold border transition-all fbtn pointer-events-none opacity-60"
-                      onclick="selectDetailType('비문학')">비문학</button>
+              <button id="detailBtnSosol" class="flex-1 py-2 rounded-xl text-sm font-semibold border transition-all fbtn active pointer-events-none opacity-60" onclick="selectDetailType('소설')">소설</button>
+              <button id="detailBtnBimun" class="flex-1 py-2 rounded-xl text-sm font-semibold border transition-all fbtn pointer-events-none opacity-60" onclick="selectDetailType('비문학')">비문학</button>
             </div>
           </div>
           <div>
             <p class="text-sm font-bold text-gray-700 mb-1">장르 선택</p>
-            <select id="detailGenre" disabled
-                    class="w-full text-sm text-gray-700 border border-gray-200 rounded-xl px-3 py-2.5 bg-white outline-none focus:border-purple-400 transition-colors">
+            <select id="detailGenre" disabled class="w-full text-sm text-gray-700 border border-gray-200 rounded-xl px-3 py-2.5 bg-white outline-none focus:border-purple-400 transition-colors">
               <option value="">장르를 선택하세요</option>
               <option>SF</option>
               <option>추리/스릴러</option>
@@ -307,8 +298,7 @@
           </div>
           <div>
             <p class="text-sm font-bold text-gray-700 mb-1">소장 도서관</p>
-            <select id="detailLibrary" disabled onchange="handleLibraryChange('detailLibrary','detailLibraryInput')"
-                    class="w-full text-sm text-gray-700 border border-gray-200 rounded-xl px-3 py-2.5 bg-white outline-none focus:border-purple-400 transition-colors">
+            <select id="detailLibrary" disabled onchange="handleLibraryChange('detailLibrary','detailLibraryInput')" class="w-full text-sm text-gray-700 border border-gray-200 rounded-xl px-3 py-2.5 bg-white outline-none focus:border-purple-400 transition-colors">
               <option value="">도서관을 선택하세요</option>
               <option>방아다리문학도서관</option>
               <option>양천중앙도서관</option>
@@ -324,34 +314,32 @@
               <option>신월3북카페</option>
               <option value="__new__">+ 도서관 추가</option>
             </select>
-            <input id="detailLibraryInput" type="text" placeholder="도서관 이름을 입력하세요" disabled
-                   class="hidden mt-2 w-full text-sm text-gray-700 border border-gray-200 rounded-xl px-3 py-2.5 bg-white outline-none focus:border-purple-400 transition-colors" />
+            <input id="detailLibraryInput" type="text" placeholder="도서관 이름을 입력하세요" disabled class="hidden mt-2 w-full text-sm text-gray-700 border border-gray-200 rounded-xl px-3 py-2.5 bg-white outline-none focus:border-purple-400 transition-colors" />
           </div>
           <div>
             <p class="text-sm font-bold text-gray-700 mb-1">위치 번호</p>
-            <input id="detailCallNo" type="text" disabled
-                   class="w-full text-sm text-gray-700 border-0 border-b border-gray-200 pb-2 outline-none bg-transparent placeholder-gray-400 focus:border-purple-400 transition-colors" />
+            <input id="detailCallNo" type="text" disabled class="w-full text-sm text-gray-700 border-0 border-b border-gray-200 pb-2 outline-none bg-transparent placeholder-gray-400 focus:border-purple-400 transition-colors" />
           </div>
           <div>
             <p class="text-sm font-bold text-gray-700 mb-2">독서 상태</p>
             <div class="flex gap-2">
-              <button id="detailBtnUnread"   class="flex-1 py-2 rounded-xl text-sm font-semibold border transition-all fbtn active pointer-events-none opacity-60"
-                      onclick="selectDetailStatus('안읽음')">안 읽음</button>
-              <button id="detailBtnReading"  class="flex-1 py-2 rounded-xl text-sm font-semibold border transition-all fbtn pointer-events-none opacity-60"
-                      onclick="selectDetailStatus('읽는중')">읽는 중</button>
-              <button id="detailBtnFinished" class="flex-1 py-2 rounded-xl text-sm font-semibold border transition-all fbtn pointer-events-none opacity-60"
-                      onclick="selectDetailStatus('완독')">완독</button>
+              <button id="detailBtnUnread"   class="flex-1 py-2 rounded-xl text-sm font-semibold border transition-all fbtn active pointer-events-none opacity-60" onclick="selectDetailStatus('안읽음')">안 읽음</button>
+              <button id="detailBtnReading"  class="flex-1 py-2 rounded-xl text-sm font-semibold border transition-all fbtn pointer-events-none opacity-60" onclick="selectDetailStatus('읽는중')">읽는 중</button>
+              <button id="detailBtnFinished" class="flex-1 py-2 rounded-xl text-sm font-semibold border transition-all fbtn pointer-events-none opacity-60" onclick="selectDetailStatus('완독')">완독</button>
             </div>
+          </div>
+          <div class="flex flex-col flex-1">
+            <p class="text-sm font-bold text-gray-700 mb-1">독서 노트</p>
+            <textarea id="detailNote" disabled placeholder="무슨 생각해?"
+                      class="w-full flex-1 min-h-[120px] text-sm text-gray-700 border border-gray-200 rounded-xl px-3 py-2.5 bg-white outline-none focus:border-purple-400 transition-colors resize-none no-scrollbar"></textarea>
           </div>
         </div>
       </div>
 
-      <div class="px-4 pt-2 flex flex-col gap-3 pb-8">
-        <button id="detailSaveBtn" onclick="saveBook()" disabled
-                class="w-full py-4 rounded-2xl text-white text-xl font-bold shadow-lg tracking-wide bg-gray-400 opacity-60 cursor-not-allowed touch-active">수정 완료</button>
+      <div class="flex-shrink-0 px-4 pt-3 flex flex-col gap-3 pb-8 bg-[#EDE9F8] border-t border-purple-100">
+        <button id="detailSaveBtn" onclick="saveBook()" disabled class="w-full py-4 rounded-2xl text-white text-xl font-bold shadow-lg tracking-wide bg-gray-400 opacity-60 cursor-not-allowed touch-active">수정 완료</button>
         <div id="deleteContainer">
-          <button onclick="confirmDeletePrompt()"
-                  class="w-full py-4 rounded-2xl text-white text-xl font-bold shadow-lg tracking-wide bg-red-500 touch-active">삭제</button>
+          <button onclick="confirmDeletePrompt()" class="w-full py-4 rounded-2xl text-white text-xl font-bold shadow-lg tracking-wide bg-red-500 touch-active">삭제</button>
         </div>
       </div>
     </div>
@@ -3415,10 +3403,8 @@
         `;
 
         card.addEventListener('click', () => showDetailScreen(book.title));
-        card.querySelector('.book-checkbox').addEventListener('click', (e) => {
-          e.stopPropagation();
-          cycleStatus(book.title);
-        });
+// 목록에서는 클릭만 가능하도록 변경
+        card.addEventListener('click', () => showDetailScreen(book.title));
         container.appendChild(card);
       });
     }
@@ -3568,7 +3554,7 @@
       }
 
       BOOKS.unshift({ title, library, callNo, author: '', type,
-                      genres: type === '소설' && genre ? [genre] : [], status: '안읽음' });
+                      genres: type === '소설' && genre ? [genre] : [], status: '안읽음', note: '' });
       saveBooks();
 
       document.getElementById('addTitle').value   = '';
@@ -3607,6 +3593,7 @@
       document.getElementById('detailTitle').value   = book.title;
       document.getElementById('detailLibrary').value = book.library;
       document.getElementById('detailCallNo').value  = book.callNo;
+      document.getElementById('detailNote').value    = book.note || '';
       selectDetailType(book.type);
       document.getElementById('detailGenre').value = book.genres.length > 0 ? book.genres[0] : '';
       selectDetailStatus(book.status);
@@ -3655,6 +3642,7 @@
       document.getElementById('detailLibrary').disabled      = !enabled;
       document.getElementById('detailLibraryInput').disabled = !enabled;
       document.getElementById('detailCallNo').disabled       = !enabled;
+      document.getElementById('detailNote').disabled         = !enabled;
       // 편집 취소 시 입력창 숨기기
       if (!enabled) {
         document.getElementById('detailLibraryInput').classList.add('hidden');
@@ -3687,6 +3675,7 @@
       const title   = document.getElementById('detailTitle').value.trim();
       const library = getLibraryValue('detailLibrary', 'detailLibraryInput');
       const callNo  = document.getElementById('detailCallNo').value.trim();
+      const note    = document.getElementById('detailNote').value.trim();
       const isSosol = document.getElementById('detailBtnSosol').classList.contains('active');
       const type    = isSosol ? '소설' : '비문학';
       const genre   = document.getElementById('detailGenre').value;
@@ -3706,7 +3695,7 @@
         addLibraryOption('librarySelect', library);
       }
 
-      book.title = title; book.library = library; book.callNo = callNo;
+      book.title = title; book.library = library; book.callNo = callNo; book.note = note;
       book.type = type; book.genres = type === '소설' && genre ? [genre] : [];
       book.status = currentDetailStatus;
 
