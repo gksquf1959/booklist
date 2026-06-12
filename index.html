@@ -93,6 +93,8 @@
         <button onclick="changeView('notes')" id="menuBtnNotes" class="text-left px-4 py-3 rounded-xl font-bold touch-active text-gray-600 hover:bg-gray-50">📝 독서 노트</button>
         <!-- [추가] 독서 노트 아래 반납 관리 메뉴 -->
         <button onclick="changeView('returns')" id="menuBtnReturns" class="text-left px-4 py-3 rounded-xl font-bold touch-active text-gray-600 hover:bg-gray-50">🔔 반납 관리</button>
+        <!-- 추가: 독서 통계 메뉴 -->
+        <button onclick="changeView('stats')" id="menuBtnStats" class="text-left px-4 py-3 rounded-xl font-bold touch-active text-gray-600 hover:bg-gray-50">📊 독서 통계</button>
       </div>
     </div>
 
@@ -336,6 +338,54 @@
         </div>
       </div>
     </div>
+
+<!-- 추가: 독서 통계 페이지 -->
+<div id="statsScreen" class="hidden flex-col h-screen bg-p-light">
+  <div class="px-4 py-5 flex flex-col gap-4 overflow-y-auto no-scrollbar pb-10">
+
+    <!-- 전체 완독 수 -->
+    <div class="bg-white rounded-2xl px-5 py-4 shadow-sm">
+      <p class="text-xs text-gray-400 mb-1">전체 완독</p>
+      <p id="statsTotalFinished" class="text-3xl font-bold text-p-main">0<span class="text-base font-normal text-gray-400 ml-1">권</span></p>
+    </div>
+
+    <!-- 월별 완독 차트 -->
+    <div class="bg-white rounded-2xl px-5 py-4 shadow-sm">
+      <div class="flex items-center justify-between mb-4">
+        <p class="text-sm font-bold text-gray-700">월별 완독</p>
+        <div class="flex items-center gap-3">
+          <button onclick="changeStatsYear(-1)" class="w-7 h-7 rounded-full flex items-center justify-center touch-active" style="background:#EDE9F8; color:#7B5EA7;">&#8249;</button>
+          <span id="statsYear" class="text-sm font-bold text-gray-700">2025</span>
+          <button onclick="changeStatsYear(1)" class="w-7 h-7 rounded-full flex items-center justify-center touch-active" style="background:#EDE9F8; color:#7B5EA7;">&#8250;</button>
+        </div>
+      </div>
+      <div id="monthlyChart" class="flex items-end gap-1 h-32"></div>
+      <div class="flex justify-between mt-1">
+        <span class="text-[9px] text-gray-300">1</span>
+        <span class="text-[9px] text-gray-300">2</span>
+        <span class="text-[9px] text-gray-300">3</span>
+        <span class="text-[9px] text-gray-300">4</span>
+        <span class="text-[9px] text-gray-300">5</span>
+        <span class="text-[9px] text-gray-300">6</span>
+        <span class="text-[9px] text-gray-300">7</span>
+        <span class="text-[9px] text-gray-300">8</span>
+        <span class="text-[9px] text-gray-300">9</span>
+        <span class="text-[9px] text-gray-300">10</span>
+        <span class="text-[9px] text-gray-300">11</span>
+        <span class="text-[9px] text-gray-300">12</span>
+      </div>
+    </div>
+
+    <!-- 연도별 완독 차트 -->
+    <div class="bg-white rounded-2xl px-5 py-4 shadow-sm">
+      <p class="text-sm font-bold text-gray-700 mb-4">연도별 완독</p>
+      <div id="yearlyChart" class="flex items-end gap-2 h-32"></div>
+      <div id="yearlyLabels" class="flex justify-between mt-1"></div>
+    </div>
+
+  </div>
+</div>
+  
     <!-- 백업 모달 -->
 <div id="backupModal" class="modal-overlay hidden" onclick="hideBackupModal(event)">
   <div class="modal-sheet" onclick="event.stopPropagation()">
@@ -3401,6 +3451,25 @@ function changeView(view) {
     filterArea.classList.add('hidden'); // 반납 관리에서는 필터 영역 숨김
     searchInput.placeholder = '제목 또는 지은이 검색';
     mainTitle.textContent = '반납 관리 🔔';
+     // 추가: 통계 뷰 분기
+  } else if (view === 'stats') {
+    btnAll.className = 'text-left px-4 py-3 rounded-xl font-bold touch-active text-gray-600 hover:bg-gray-50';
+    btnNotes.className = 'text-left px-4 py-3 rounded-xl font-bold touch-active text-gray-600 hover:bg-gray-50';
+    btnReturns.className = 'text-left px-4 py-3 rounded-xl font-bold touch-active text-gray-600 hover:bg-gray-50';
+    document.getElementById('menuBtnStats').className = 'text-left px-4 py-3 rounded-xl font-bold touch-active bg-p-light text-p-main';
+    filterArea.classList.add('hidden');
+    searchInput.placeholder = '';
+    mainTitle.textContent = '📊 독서 통계';
+  }
+  // 추가: stats일 때는 통계 화면 표시, 나머지는 숨김
+  const statsScreen = document.getElementById('statsScreen');
+  if (view === 'stats') {
+    statsScreen.classList.remove('hidden');
+    statsScreen.classList.add('flex');
+    renderStats();
+  } else {
+    statsScreen.classList.add('hidden');
+    statsScreen.classList.remove('flex');
   }
   
   document.getElementById('searchInput').value = '';
@@ -3841,6 +3910,12 @@ if (currentDetailStatus === '읽는중' && dueDate) {
   // 읽는중이 아니거나 날짜를 비운 경우, 현재 책의 반납일만 제거
   delete book.dueDate;
 }
+            // 추가: 완독으로 저장할 때 finishedDate 자동 기록
+      // 이미 완독 날짜가 있으면 유지, 없을 때만 오늘 날짜 저장
+      if (currentDetailStatus === '완독' && !book.finishedDate) {
+        const today = new Date();
+        book.finishedDate = `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}-${String(today.getDate()).padStart(2,'0')}`;
+      }
       
       saveBooks();
       applyFilters();
@@ -4066,6 +4141,9 @@ window.addEventListener('popstate', () => {
   } else if (currentView !== 'all') {
     history.pushState(null, ''); // 히스토리 유지 (다시 뒤로가기 눌러도 종료 안 됨)
     changeView('all');
+    // 추가: stats 뷰에서 뒤로가기 시 통계 화면 숨김
+    document.getElementById('statsScreen').classList.add('hidden');
+    document.getElementById('statsScreen').classList.remove('flex');    
   } else {
     if (backPressedOnce) {
       history.back();
@@ -4088,6 +4166,86 @@ history.pushState(null, '');
     // ═══════════════════════════════════════════════════════
       const countEl = document.getElementById('bookCount');
       countEl.textContent = `전체: ${BOOKS.length}권`;
+// ═══════════════════════════════════════════════════════
+//  독서 통계
+// ═══════════════════════════════════════════════════════
+let statsCurrentYear = new Date().getFullYear();
+
+function changeStatsYear(dir) {
+  statsCurrentYear += dir;
+  document.getElementById('statsYear').textContent = statsCurrentYear;
+  renderMonthlyChart();
+}
+
+function renderStats() {
+  const finished = BOOKS.filter(b => b.status === '완독' && b.finishedDate);
+
+  // 전체 완독 수
+  document.getElementById('statsTotalFinished').innerHTML =
+    `${finished.length}<span class="text-base font-normal text-gray-400 ml-1">권</span>`;
+
+  // 현재 연도로 초기화
+  statsCurrentYear = new Date().getFullYear();
+  document.getElementById('statsYear').textContent = statsCurrentYear;
+
+  renderMonthlyChart();
+  renderYearlyChart();
+}
+
+function renderMonthlyChart() {
+  const finished = BOOKS.filter(b => b.status === '완독' && b.finishedDate);
+
+  const monthlyCounts = Array(12).fill(0);
+  finished.forEach(b => {
+    const d = new Date(b.finishedDate);
+    if (d.getFullYear() === statsCurrentYear) {
+      monthlyCounts[d.getMonth()]++;
+    }
+  });
+
+  const max = Math.max(...monthlyCounts, 1);
+  const container = document.getElementById('monthlyChart');
+  container.innerHTML = monthlyCounts.map((count, i) => `
+    <div class="flex flex-col items-center flex-1 gap-1">
+      <span class="text-[9px] text-gray-400">${count > 0 ? count : ''}</span>
+      <div class="w-full rounded-t-md transition-all" style="height:${Math.max((count/max)*100, 4)}px; background:${count > 0 ? '#7B5EA7' : '#E5E7EB'};"></div>
+    </div>
+  `).join('');
+}
+
+function renderYearlyChart() {
+  const finished = BOOKS.filter(b => b.status === '완독' && b.finishedDate);
+  if (finished.length === 0) {
+    document.getElementById('yearlyChart').innerHTML = '<p class="text-xs text-gray-300 w-full text-center">완독 데이터가 없어요</p>';
+    document.getElementById('yearlyLabels').innerHTML = '';
+    return;
+  }
+
+  const years = finished.map(b => new Date(b.finishedDate).getFullYear());
+  const minYear = Math.min(...years);
+  const maxYear = Math.max(...years);
+
+  const yearlyCounts = [];
+  for (let y = minYear; y <= maxYear; y++) {
+    yearlyCounts.push({
+      year: y,
+      count: finished.filter(b => new Date(b.finishedDate).getFullYear() === y).length
+    });
+  }
+
+  const max = Math.max(...yearlyCounts.map(y => y.count), 1);
+  document.getElementById('yearlyChart').innerHTML = yearlyCounts.map(y => `
+    <div class="flex flex-col items-center flex-1 gap-1">
+      <span class="text-[9px] text-gray-400">${y.count > 0 ? y.count : ''}</span>
+      <div class="w-full rounded-t-md" style="height:${Math.max((y.count/max)*100, 4)}px; background:${y.count > 0 ? '#7B5EA7' : '#E5E7EB'};"></div>
+    </div>
+  `).join('');
+
+  document.getElementById('yearlyLabels').innerHTML = yearlyCounts.map(y =>
+    `<span class="text-[9px] text-gray-300 flex-1 text-center">${y.year}</span>`
+  ).join('');
+}
+    
  // [추가] 앱 초기 로딩 시 오늘/내일 반납 예정 도서 알림
 // 추가: 오늘 기준 D-Day/D-1 책 중 완독 안 된 책이 있으면 뱃지 표시
 function updateBellBadge() {
