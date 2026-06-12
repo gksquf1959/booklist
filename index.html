@@ -3463,13 +3463,16 @@ function changeView(view) {
   }
   // 추가: stats일 때는 통계 화면 표시, 나머지는 숨김
   const statsScreen = document.getElementById('statsScreen');
+  const mainScreen  = document.getElementById('mainScreen');
   if (view === 'stats') {
     statsScreen.classList.remove('hidden');
     statsScreen.classList.add('flex');
+    mainScreen.classList.add('hidden'); // 추가: 책목록 화면 숨김
     renderStats();
   } else {
     statsScreen.classList.add('hidden');
     statsScreen.classList.remove('flex');
+    mainScreen.classList.remove('hidden'); // 추가: 책목록 화면 다시 표시
   }
   
   document.getElementById('searchInput').value = '';
@@ -3573,7 +3576,7 @@ function getDueDateLabel(dueDate) {
               <p class="font-bold text-sm text-gray-800 leading-snug truncate flex-1">${book.title}</p>
             </div>
             <div class="w-full h-[1px] bg-gray-100 my-1"></div>
-            <p class="text-xs text-gray-600 leading-relaxed text-clamp-4 flex-1">${book.note}</p>
+            <p class="text-xs text-gray-600 leading-relaxed text-clamp-4 flex-1">${book.note || ''}</p>
           `;
           card.addEventListener('click', () => showDetailScreen(book.title));
           container.appendChild(card);
