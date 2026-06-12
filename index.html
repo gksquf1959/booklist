@@ -355,7 +355,26 @@
 <!-- 랜덤 모달 -->
 <div id="randomModal" class="modal-overlay hidden" onclick="hideRandomModal(event)">
   <div class="modal-sheet" onclick="event.stopPropagation()">
-    <h2 class="text-lg font-bold text-gray-800 mb-4">🎲 오늘 이 책 어때요?</h2>
+    <!-- 수정: 제목 문구 변경, 이모티콘 제거 -->
+    <h2 class="text-lg font-bold text-gray-800 mb-3">How about...</h2>
+
+    <!-- 추가: 장르 필터 버튼 -->
+    <div class="flex gap-2 mb-2">
+      <button id="rFilterTypeAll"    onclick="setRandomFilter('type','전체')"  class="fbtn active">전체</button>
+      <button id="rFilterTypeFiction" onclick="setRandomFilter('type','소설')"  class="fbtn">소설</button>
+      <button id="rFilterTypeNonFic" onclick="setRandomFilter('type','비문학')" class="fbtn">비문학</button>
+    </div>
+    <!-- 추가: 도서관 필터 버튼 -->
+    <div class="flex gap-2 mb-4">
+      <button id="rFilterLibAll"     onclick="setRandomFilter('lib','전체')"    class="fbtn active">전체</button>
+      <button id="rFilterLibBaadari" onclick="setRandomFilter('lib','방아다리')" class="fbtn">방아다리</button>
+      <button id="rFilterLibOther"   onclick="setRandomFilter('lib','그외')"    class="fbtn">그 외</button>
+    </div>
+
+    <!-- 수정: 빈 상태 문구 추가 -->
+    <div id="randomEmpty" class="hidden bg-p-light rounded-2xl p-6 flex flex-col items-center justify-center mb-4" style="min-height:100px;">
+      <p class="text-sm text-gray-400 font-bold">조건에 맞는 책이 없어요</p>
+    </div>
     <div id="randomCardContent" class="bg-p-light rounded-2xl p-4 flex flex-col gap-2 mb-4">
       <p id="randomTitle" class="font-bold text-base text-gray-800"></p>
       <p id="randomAuthor" class="text-xs text-gray-400"></p>
@@ -3860,37 +3879,90 @@ if (currentDetailStatus === '읽는중' && dueDate) {
     //  랜덤 카드
     // ═══════════════════════════════════════════════════════
     let currentRandomBook = null;
+    let randomFilterType = '전체';
+    let randomFilterLib  = '전체';
 
-    function showRandomCard() {
-     const unread = BOOKS.filter(b => b.status === '안읽음');
-      const pool = unread.length > 0 ? unread : BOOKS.filter(b => b.status !== '완독');
-      const book = pool[Math.floor(Math.random() * pool.length)];
-      currentRandomBook = book;
+    function setRandomFilter(kind, val) {
+        if (kind === 'type') {
+    randomFilterType = val;
+    // 장르 버튼 active 상태 갱신
+    ['전체','소설','비문학'].forEach(v => {
+      const idMap = { '전체':'rFilterTypeAll', '소설':'rFilterTypeFiction', '비문학':'rFilterTypeNonFic' };
+      document.getElementById(idMap[v]).classList.toggle('active', v === val);
+    });
+  } else {
+    randomFilterLib = val;
+    // 도서관 버튼 active 상태 갱신
+    ['전체','방아다리','그외'].forEach(v => {
+      const idMap = { '전체':'rFilterLibAll', '방아다리':'rFilterLibBaadari', '그외':'rFilterLibOther' };
+      document.getElementById(idMap[v]).classList.toggle('active', v === val);
+    });
+  }
+  // 필터 바꾸면 즉시 재추천
+  showRandomCard();
+}
+    
+function showRandomCard() {
+  // 안읽은 책 고정 필터 (기존 로직 유지)
+  let pool = BOOKS.filter(b => b.status === '안읽음');
+  if (pool.length === 0) pool = BOOKS.filter(b => b.status !== '완독');
 
-      document.getElementById('randomTitle').textContent = book.title;
-      document.getElementById('randomAuthor').textContent = book.author || '';
-      document.getElementById('randomLibrary').textContent = book.library;
-      document.getElementById('randomCallNo').textContent = book.callNo ? `[${book.callNo}]` : '';
+  // 수정: 장르 필터 적용
+  if (randomFilterType !== '전체') {
+    pool = pool.filter(b => b.type === randomFilterType);
+  }
 
-      const tagsList = [book.type === '소설' ? '#소설' : '#비문학', ...book.genres.map(g => '#' + g)];
-      document.getElementById('randomTags').innerHTML = tagsList.map(t =>
-        `<span class="text-[10px] font-semibold px-2 py-0.5 rounded-full text-white" style="background:#9B77D1;">${t}</span>`
-      ).join('');
+  // 수정: 도서관 필터 적용
+  if (randomFilterLib === '방아다리') {
+    pool = pool.filter(b => b.library === '방아다리문학도서관');
+  } else if (randomFilterLib === '그외') {
+    pool = pool.filter(b => b.library !== '방아다리문학도서관');
+  }
 
-      document.getElementById('randomTitle').style.cursor = 'pointer';
-      document.getElementById('randomTitle').onclick = () => {
-        hideRandomModal();
-        showDetailScreen(book.title);
-      };
-      document.getElementById('randomCardContent').style.cursor = 'pointer';
-      document.getElementById('randomCardContent').onclick = () => {
-        hideRandomModal();
-        showDetailScreen(book.title);
-      };
-      
-      document.getElementById('randomModal').classList.remove('hidden');
-      history.pushState({ modal: 'random' }, '', location.href);
-    }
+  const cardEl  = document.getElementById('randomCardContent');
+  const emptyEl = document.getElementById('randomEmpty');
+
+  // 수정: 조건에 맞는 책이 없을 때 빈 상태 표시
+  if (pool.length === 0) {
+    cardEl.classList.add('hidden');
+    emptyEl.classList.remove('hidden');
+    currentRandomBook = null;
+    document.getElementById('randomModal').classList.remove('hidden');
+    history.pushState({ modal: 'random' }, '', location.href);
+    return;
+  }
+
+  // 책 있으면 카드 표시
+  emptyEl.classList.add('hidden');
+  cardEl.classList.remove('hidden');
+
+  const book = pool[Math.floor(Math.random() * pool.length)];
+  currentRandomBook = book;
+
+  document.getElementById('randomTitle').textContent = book.title;
+  document.getElementById('randomAuthor').textContent = book.author || '';
+  document.getElementById('randomLibrary').textContent = book.library;
+  document.getElementById('randomCallNo').textContent = book.callNo ? `[${book.callNo}]` : '';
+
+  const tagsList = [book.type === '소설' ? '#소설' : '#비문학', ...book.genres.map(g => '#' + g)];
+  document.getElementById('randomTags').innerHTML = tagsList.map(t =>
+    `<span class="text-[10px] font-semibold px-2 py-0.5 rounded-full text-white" style="background:#9B77D1;">${t}</span>`
+  ).join('');
+
+  document.getElementById('randomTitle').style.cursor = 'pointer';
+  document.getElementById('randomTitle').onclick = () => {
+    hideRandomModal();
+    showDetailScreen(book.title);
+  };
+  document.getElementById('randomCardContent').style.cursor = 'pointer';
+  document.getElementById('randomCardContent').onclick = () => {
+    hideRandomModal();
+    showDetailScreen(book.title);
+  };
+
+  document.getElementById('randomModal').classList.remove('hidden');
+  history.pushState({ modal: 'random' }, '', location.href);
+}
 
     function hideRandomModal(e) {
       if (!e || e.target === document.getElementById('randomModal')) {
