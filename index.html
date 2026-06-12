@@ -3709,10 +3709,15 @@ renderBooks(result);
       document.getElementById('addScreen').classList.remove('translate-y-0');
       document.getElementById('addScreen').classList.add('translate-y-full');
     }
-    function showMainScreenFromDetail() {
-      document.getElementById('detailScreen').classList.remove('translate-y-0');
-      document.getElementById('detailScreen').classList.add('translate-y-full');
-    }
+function showMainScreenFromDetail() {
+  document.getElementById('detailScreen').classList.remove('translate-y-0');
+  document.getElementById('detailScreen').classList.add('translate-y-full');
+  // 추가: 통계에서 넘어온 경우 통계 페이지로 복귀
+  if (cameFromStats) {
+    cameFromStats = false; // 초기화
+    changeView('stats');
+  }
+}
 
     // ═══════════════════════════════════════════════════════
     //  입력 화면
@@ -4366,7 +4371,11 @@ function renderYearlyDetail() {
   `;
 }
     // 추가: 통계 목록에서 책 제목 누르면 상세 페이지로 이동
+// 추가: 통계에서 상세로 넘어왔는지 기억하는 변수
+let cameFromStats = false;
+
 function goToBookFromStats(title) {
+  cameFromStats = true; // 통계에서 왔다고 표시
   changeView('all');
   showDetailScreen(title);
 }
