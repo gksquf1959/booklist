@@ -108,7 +108,10 @@
           </div>
           <div class="flex items-center gap-2">
             <!-- [추가] 반납 관리 화면으로 이동하는 종 아이콘 -->
-            <button onclick="changeView('returns')" class="w-10 h-10 rounded-full flex items-center justify-center text-lg text-white shadow-md touch-active" style="background:rgba(255,255,255,.22);">🔔</button>
+            <div class="relative">
+  <button id="bellBtn" onclick="changeView('returns')" class="w-10 h-10 rounded-full flex items-center justify-center text-lg text-white shadow-md touch-active" style="background:rgba(255,255,255,.22);">🔔</button>
+  <span id="bellBadge" class="hidden absolute top-0 right-0 w-3 h-3 rounded-full bg-red-500 border-2" style="border-color:#7B5EA7;"></span>
+</div>
             <button onclick="showBackupModal()" class="w-10 h-10 rounded-full flex items-center justify-center text-lg text-white shadow-md touch-active" style="background:rgba(255,255,255,.22);">💾</button>
             <button onclick="showAddScreen()" class="w-10 h-10 rounded-full flex items-center justify-center text-2xl font-bold text-white shadow-md touch-active" style="background:rgba(255,255,255,.22);">+</button>
           </div>
@@ -3822,6 +3825,8 @@ if (currentDetailStatus === '읽는중' && dueDate) {
       
       saveBooks();
       applyFilters();
+      // 수정: 완독 처리 후 뱃지 조건 재확인 (D-Day/D-1 책이 모두 완독이면 뱃지 제거)
+      updateBellBadge();
       showMainScreenFromDetail();
     }
 
@@ -4005,20 +4010,46 @@ history.pushState(null, '');
       const countEl = document.getElementById('bookCount');
       countEl.textContent = `전체: ${BOOKS.length}권`;
  // [추가] 앱 초기 로딩 시 오늘/내일 반납 예정 도서 알림
+// 추가: 오늘 기준 D-Day/D-1 책 중 완독 안 된 책이 있으면 뱃지 표시
+function updateBellBadge() {
+  const today = new Date();
+  const todayOnly = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+
+  const hasPending = BOOKS.some(book => {
+    if (!book.dueDate) return false;
+    if (book.status === '완독') return false; // 완독된 책은 제외
+    const dueOnly = parseLocalDate(book.dueDate);
+    const diffDays = Math.ceil((dueOnly - todayOnly) / (1000 * 60 * 60 * 24));
+    return diffDays === 0 || diffDays === 1; // D-Day 또는 D-1만 대상
+  });
+
+  document.getElementById('bellBadge').classList.toggle('hidden', !hasPending);
+}
 function notifyDueBooks() {
   if (!('Notification' in window)) return;
 
   const today = new Date();
   const todayOnly = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+  // 수정: 오늘 날짜 문자열 (예: "2025-06-12") — localStorage 키에 사용
+  const todayStr = todayOnly.toISOString().slice(0, 10);
 
   const targets = BOOKS.filter(book => {
     if (!book.dueDate) return false;
 
     const dueOnly = parseLocalDate(book.dueDate);
     const diffDays = Math.ceil((dueOnly - todayOnly) / (1000 * 60 * 60 * 24));
+    if (diffDays !== 0 && diffDays !== 1) return false;
 
-    return diffDays === 0 || diffDays === 1;
+    // 수정: 오늘 날짜 + 책 제목 조합으로 이미 알림 보냈는지 확인
+    // 키 예시: "notified_2025-06-12_오벨리스크의 문"
+    const storageKey = `notified_${todayStr}_${book.title}`;
+    if (localStorage.getItem(storageKey)) return false; // 오늘 이미 알림 보낸 책은 제외
+
+    return true;
   });
+
+  // 수정: 알림 대상 여부와 별개로 뱃지는 항상 업데이트
+  updateBellBadge();
 
   if (targets.length === 0) return;
 
@@ -4029,7 +4060,12 @@ function notifyDueBooks() {
         body: `${book.title} - ${label === 'D-Day' ? '오늘 반납일입니다.' : '내일 반납일입니다.'}`,
         icon: 'icon-192.png'
       });
+      // 수정: 알림 보낸 책을 오늘 날짜 기준으로 localStorage에 기록
+      const storageKey = `notified_${todayStr}_${book.title}`;
+      localStorage.setItem(storageKey, '1');
     });
+    // 수정: 알림 발송 후 뱃지 업데이트
+    updateBellBadge();
   };
 
   if (Notification.permission === 'granted') {
