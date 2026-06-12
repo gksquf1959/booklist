@@ -3340,8 +3340,16 @@
 
 function changeView(view) {
   currentView = view;
-  toggleMenu(); // 메뉴창 닫기
-  
+  // ↓ 수정: toggleMenu() 대신, 메뉴가 열려있을 때만 닫도록 변경
+  // 종 버튼처럼 메뉴가 닫혀 있는 상태에서 호출하면 오히려 열리는 버그 수정
+  const menu = document.getElementById('sideMenu');
+  if (!menu.classList.contains('-translate-x-full')) {
+    // 메뉴가 열려있을 때만 닫는다
+    const overlay = document.getElementById('sideMenuOverlay');
+    overlay.classList.add('opacity-0');
+    menu.classList.add('-translate-x-full');
+    setTimeout(() => overlay.classList.add('hidden'), 300);
+  }  
   const btnAll = document.getElementById('menuBtnAll');
   const btnNotes = document.getElementById('menuBtnNotes');
   const btnReturns = document.getElementById('menuBtnReturns'); // [추가] 반납 관리 메뉴 버튼
@@ -3719,20 +3727,23 @@ renderBooks(result);
       if (val !== '소설') dg.value = '';
     }
 
-    function selectDetailStatus(val) {
-      currentDetailStatus = val;
-      document.getElementById('detailBtnUnread')  .classList.toggle('active', val === '안읽음');
-      document.getElementById('detailBtnReading') .classList.toggle('active', val === '읽는중');
-      document.getElementById('detailBtnFinished').classList.toggle('active', val === '완독');
-        // [추가] '읽는중'일 때만 반납일자 입력창 표시
-        const dueWrap = document.getElementById('detailDueDateWrap');
-        const dueInput = document.getElementById('detailDueDate');
-        dueWrap.classList.toggle('hidden', val !== '읽는중');
-        // 읽는중이 아니면 화면 값은 비움. 실제 저장 시 해당 책의 dueDate도 제거됨.
-        if (val !== '읽는중') {
-              dueInput.value = '';
-            }
-    }
+function selectDetailStatus(val) {
+  currentDetailStatus = val;
+  document.getElementById('detailBtnUnread')  .classList.toggle('active', val === '안읽음');
+  document.getElementById('detailBtnReading') .classList.toggle('active', val === '읽는중');
+  document.getElementById('detailBtnFinished').classList.toggle('active', val === '완독');
+  // '읽는중'일 때만 반납일자 입력창 표시
+  const dueWrap = document.getElementById('detailDueDateWrap');
+  const dueInput = document.getElementById('detailDueDate');
+  dueWrap.classList.toggle('hidden', val !== '읽는중');
+  // 읽는중이 아니면 화면 값은 비움. 실제 저장 시 해당 책의 dueDate도 제거됨.
+  if (val !== '읽는중') {
+    dueInput.value = '';
+  }
+  // ↓ 수정 추가: 편집 모드일 때 '읽는중' 선택하면 달력 input 즉시 활성화
+  // 기존에는 setDetailInputsEnabled()가 한 번만 호출되어 나중에 읽는중으로 바꿔도 disabled가 유지됨
+  dueInput.disabled = !isEditMode || val !== '읽는중';
+}
 
     function setDetailInputsEnabled(enabled) {
       document.getElementById('detailTitle').disabled        = !enabled;
@@ -3967,6 +3978,10 @@ window.addEventListener('popstate', () => {
     showMainScreenFromDetail();
   } else if (addVisible) {
     showMainScreen();
+  // ↓ 수정 추가: 책목록이 아닌 다른 탭(노트/반납관리)에 있을 때는 책목록으로 돌아감
+  } else if (currentView !== 'all') {
+    history.pushState(null, ''); // 히스토리 유지 (다시 뒤로가기 눌러도 종료 안 됨)
+    changeView('all');
   } else {
     if (backPressedOnce) {
       history.back();
