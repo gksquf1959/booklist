@@ -91,6 +91,8 @@
       <div class="flex flex-col p-4 gap-2">
         <button onclick="changeView('all')" id="menuBtnAll" class="text-left px-4 py-3 rounded-xl font-bold touch-active bg-p-light text-p-main">📚 전체 목록</button>
         <button onclick="changeView('notes')" id="menuBtnNotes" class="text-left px-4 py-3 rounded-xl font-bold touch-active text-gray-600 hover:bg-gray-50">📝 독서 노트</button>
+        <!-- [추가] 독서 노트 아래 반납 관리 메뉴 -->
+        <button onclick="changeView('returns')" id="menuBtnReturns" class="text-left px-4 py-3 rounded-xl font-bold touch-active text-gray-600 hover:bg-gray-50">🔔 반납 관리</button>
       </div>
     </div>
 
@@ -105,6 +107,8 @@
             <h1 id="mainTitle" class="text-white text-2xl font-bold tracking-tight">To Read List 📚</h1>
           </div>
           <div class="flex items-center gap-2">
+            <!-- [추가] 반납 관리 화면으로 이동하는 종 아이콘 -->
+            <button onclick="changeView('returns')" class="w-10 h-10 rounded-full flex items-center justify-center text-lg text-white shadow-md touch-active" style="background:rgba(255,255,255,.22);">🔔</button>
             <button onclick="showBackupModal()" class="w-10 h-10 rounded-full flex items-center justify-center text-lg text-white shadow-md touch-active" style="background:rgba(255,255,255,.22);">💾</button>
             <button onclick="showAddScreen()" class="w-10 h-10 rounded-full flex items-center justify-center text-2xl font-bold text-white shadow-md touch-active" style="background:rgba(255,255,255,.22);">+</button>
           </div>
@@ -305,6 +309,15 @@
               <button id="detailBtnFinished" class="flex-1 py-2 rounded-xl text-sm font-semibold border transition-all fbtn pointer-events-none opacity-60" onclick="selectDetailStatus('완독')">완독</button>
             </div>
           </div>
+         
+          <!-- [추가] 상태가 '읽는중'일 때만 표시되는 반납일자 입력창 -->
+          <div id="detailDueDateWrap" class="hidden">
+              <p class="text-sm font-bold text-gray-700 mb-1">반납일자</p>
+              <input id="detailDueDate" type="date" disabled
+                         class="w-full text-sm text-gray-700 border border-gray-200 rounded-xl px-3 py-2.5 bg-white outline-none focus:border-purple-400 transition-colors" />
+          </div>
+
+          
           <div class="flex flex-col flex-1">
             <p class="text-sm font-bold text-gray-700 mb-1">독서 노트</p>
             <textarea id="detailNote" disabled placeholder="무슨 생각해?"
@@ -3325,38 +3338,73 @@
       }
     }
 
-    function changeView(view) {
-      currentView = view;
-      toggleMenu(); // 메뉴창 닫기
-      
-      const btnAll = document.getElementById('menuBtnAll');
-      const btnNotes = document.getElementById('menuBtnNotes');
-      const filterArea = document.getElementById('filterArea');
-      const searchInput = document.getElementById('searchInput');
-      const mainTitle = document.getElementById('mainTitle');
+function changeView(view) {
+  currentView = view;
+  toggleMenu(); // 메뉴창 닫기
+  
+  const btnAll = document.getElementById('menuBtnAll');
+  const btnNotes = document.getElementById('menuBtnNotes');
+  const btnReturns = document.getElementById('menuBtnReturns'); // [추가] 반납 관리 메뉴 버튼
+  const filterArea = document.getElementById('filterArea');
+  const searchInput = document.getElementById('searchInput');
+  const mainTitle = document.getElementById('mainTitle');
 
-      if (view === 'all') {
-        btnAll.className = 'text-left px-4 py-3 rounded-xl font-bold touch-active bg-p-light text-p-main';
-        btnNotes.className = 'text-left px-4 py-3 rounded-xl font-bold touch-active text-gray-600 hover:bg-gray-50';
-        filterArea.classList.remove('hidden');
-        searchInput.placeholder = '제목 또는 지은이 검색';
-        mainTitle.textContent = 'To Read List 📚';
-      } else {
-        btnAll.className = 'text-left px-4 py-3 rounded-xl font-bold touch-active text-gray-600 hover:bg-gray-50';
-        btnNotes.className = 'text-left px-4 py-3 rounded-xl font-bold touch-active bg-p-light text-p-main';
-        filterArea.classList.add('hidden'); // 필터 영역 숨김
-        searchInput.placeholder = '제목 또는 노트 내용 검색';
-        mainTitle.textContent = '독서 노트 📝';
-      }
-      
-      document.getElementById('searchInput').value = '';
-      F.search = '';
-      applyFilters();
-    }
+  if (view === 'all') {
+    btnAll.className = 'text-left px-4 py-3 rounded-xl font-bold touch-active bg-p-light text-p-main';
+    btnNotes.className = 'text-left px-4 py-3 rounded-xl font-bold touch-active text-gray-600 hover:bg-gray-50';
+    btnReturns.className = 'text-left px-4 py-3 rounded-xl font-bold touch-active text-gray-600 hover:bg-gray-50'; // [추가]
+    filterArea.classList.remove('hidden');
+    searchInput.placeholder = '제목 또는 지은이 검색';
+    mainTitle.textContent = 'To Read List 📚';
+  } else if (view === 'notes') {
+    btnAll.className = 'text-left px-4 py-3 rounded-xl font-bold touch-active text-gray-600 hover:bg-gray-50';
+    btnNotes.className = 'text-left px-4 py-3 rounded-xl font-bold touch-active bg-p-light text-p-main';
+    btnReturns.className = 'text-left px-4 py-3 rounded-xl font-bold touch-active text-gray-600 hover:bg-gray-50'; // [추가]
+    filterArea.classList.add('hidden'); // 필터 영역 숨김
+    searchInput.placeholder = '제목 또는 노트 내용 검색';
+    mainTitle.textContent = '독서 노트 📝';
+  } else if (view === 'returns') {
+    // [추가] 반납 관리 화면
+    btnAll.className = 'text-left px-4 py-3 rounded-xl font-bold touch-active text-gray-600 hover:bg-gray-50';
+    btnNotes.className = 'text-left px-4 py-3 rounded-xl font-bold touch-active text-gray-600 hover:bg-gray-50';
+    btnReturns.className = 'text-left px-4 py-3 rounded-xl font-bold touch-active bg-p-light text-p-main';
+    filterArea.classList.add('hidden'); // 반납 관리에서는 필터 영역 숨김
+    searchInput.placeholder = '제목 또는 지은이 검색';
+    mainTitle.textContent = '반납 관리 🔔';
+  }
+  
+  document.getElementById('searchInput').value = '';
+  F.search = '';
+  applyFilters();
+}
+// --------------------------------------------------
+// 렌더링 보조 함수: 반납일 D-Day 계산
+// --------------------------------------------------
 
+    // [추가] YYYY-MM-DD 문자열을 로컬 날짜 기준으로 변환
+function parseLocalDate(dateString) {
+  const [year, month, day] = dateString.split('-').map(Number);
+  return new Date(year, month - 1, day);
+}
+
+// [추가] dueDate 기준 D-Day 라벨 계산
+function getDueDateLabel(dueDate) {
+  if (!dueDate) return '';
+
+  const today = new Date();
+  const todayOnly = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+  const dueOnly = parseLocalDate(dueDate);
+
+  const diffDays = Math.ceil((dueOnly - todayOnly) / (1000 * 60 * 60 * 24));
+
+  if (diffDays < 0) return '연체';
+  if (diffDays === 0) return 'D-Day';
+  return `D-${diffDays}`;
+}
     // ═══════════════════════════════════════════════════════
     //  렌더링
     // ═══════════════════════════════════════════════════════
+    
     function renderBooks(list) {
       const container = document.getElementById('bookList');
       const emptyMsg  = document.getElementById('emptyMsg');
@@ -3372,38 +3420,49 @@
       emptyMsg.classList.add('hidden');
       emptyMsg.classList.remove('flex');
 
-      if (currentView === 'all') {
-        // [전체 목록] 1열 가로 카드 리스트
-        container.className = 'flex-1 overflow-y-auto px-4 pb-2 flex flex-col gap-2 pt-1 no-scrollbar';
-        list.forEach(book => {
-          const tagsList = [book.type === '소설' ? '#소설' : '#비문학', ...book.genres.map(g => '#' + g)];
-          const tagsHtml = tagsList.map(t =>
-            `<span class="text-[10px] font-semibold px-2 py-0.5 rounded-full text-white" style="background:#9B77D1;">${t}</span>`
-          ).join('');
+      if (currentView === 'all' || currentView === 'returns') {
+  // [수정] 전체 목록과 반납 관리 모두 1열 가로 카드 리스트 사용
+  container.className = 'flex-1 overflow-y-auto px-4 pb-2 flex flex-col gap-2 pt-1 no-scrollbar';
 
-          const isChecked = book.status === '완독';
-          const checkHtml = isChecked
-            ? `<svg class="w-3.5 h-3.5 text-white" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>` : '';
-          const cbStyle = book.status === '읽는중' ? 'border-color:#f59e0b;' : '';
+  list.forEach(book => {
+    const tagsList = [book.type === '소설' ? '#소설' : '#비문학', ...book.genres.map(g => '#' + g)];
+    const tagsHtml = tagsList.map(t =>
+      `<span class="text-[10px] font-semibold px-2 py-0.5 rounded-full text-white" style="background:#9B77D1;">${t}</span>`
+    ).join('');
 
-          const card = document.createElement('div');
-          card.className = 'bg-white rounded-2xl px-4 py-3 shadow-sm flex items-start gap-3 touch-active cursor-pointer';
-          card.innerHTML = `
-            <div class="book-checkbox ${isChecked ? 'checked' : ''} mt-0.5" style="${cbStyle}">
-              ${checkHtml}
-              ${book.status === '읽는중' ? '<span style="width:8px;height:8px;border-radius:50%;background:#f59e0b;display:block;"></span>' : ''}
-            </div>
-            <div class="flex-1 min-w-0">
-              <p class="font-bold text-sm text-gray-800 leading-snug">${book.title}</p>
-              <p class="text-xs text-gray-400 mt-0.5">[${book.library} - ${book.callNo}]</p>
-              <p class="text-xs text-gray-300 mt-0.5">${book.author}</p>
-            </div>
-            <div class="flex flex-col items-end gap-1 shrink-0">${tagsHtml}</div>
-          `;
-          card.addEventListener('click', () => showDetailScreen(book.title));
-          container.appendChild(card);
-        });
-      } else {
+    // [추가] dueDate가 있는 책만 D-Day 표시
+    const dueLabel = getDueDateLabel(book.dueDate);
+    const dueHtml = dueLabel
+      ? `<span class="text-[10px] font-bold px-2 py-0.5 rounded-full text-white"
+                style="background:${dueLabel === '연체' ? '#ef4444' : '#f59e0b'};">${dueLabel}</span>`
+      : '';
+
+    const isChecked = book.status === '완독';
+    const checkHtml = isChecked
+      ? `<svg class="w-3.5 h-3.5 text-white" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>` : '';
+    const cbStyle = book.status === '읽는중' ? 'border-color:#f59e0b;' : '';
+
+    const card = document.createElement('div');
+    card.className = 'bg-white rounded-2xl px-4 py-3 shadow-sm flex items-start gap-3 touch-active cursor-pointer';
+    card.innerHTML = `
+      <div class="book-checkbox ${isChecked ? 'checked' : ''} mt-0.5" style="${cbStyle}">
+        ${checkHtml}
+        ${book.status === '읽는중' ? '<span style="width:8px;height:8px;border-radius:50%;background:#f59e0b;display:block;"></span>' : ''}
+      </div>
+      <div class="flex-1 min-w-0">
+        <p class="font-bold text-sm text-gray-800 leading-snug">${book.title}</p>
+        <p class="text-xs text-gray-400 mt-0.5">[${book.library} - ${book.callNo}]</p>
+        <p class="text-xs text-gray-300 mt-0.5">${book.author || ''}</p>
+      </div>
+      <div class="flex flex-col items-end gap-1 shrink-0">
+        ${dueHtml}
+        ${tagsHtml}
+      </div>
+    `;
+    card.addEventListener('click', () => showDetailScreen(book.title));
+    container.appendChild(card);
+  });
+} else {
         // [독서 노트] 2열 세로 카드 그리드
         container.className = 'flex-1 overflow-y-auto px-4 pb-2 grid grid-cols-2 gap-3 pt-1 items-start content-start no-scrollbar';
         list.forEach(book => {
@@ -3428,37 +3487,45 @@
       document.getElementById('searchClear').classList.toggle('hidden', F.search === '');
 
       const result = BOOKS.filter(b => {
-        if (currentView === 'notes') {
-          // 노트 화면: 노트가 있는 책만, 그리고 검색은 제목과 노트 내용에서
-          if (!b.note || b.note.trim() === '') return false;
-          if (F.search && !b.title.toLowerCase().includes(F.search) && !b.note.toLowerCase().includes(F.search)) return false;
-          return true;
-        } else {
-          // 전체 목록 화면: 기존 로직
-          F.library = document.getElementById('librarySelect').value;
-          F.genre   = document.getElementById('genreSelect').value;
-          
-          if (F.search  && !b.title.toLowerCase().includes(F.search) && !(b.author || '').toLowerCase().includes(F.search)) return false;
-          if (F.library && b.library !== F.library)    return false;
-          if (F.type    && b.type    !== F.type)       return false;
-          if (F.genre   && !b.genres.includes(F.genre)) return false;
-          if (F.status  && b.status  !== F.status)     return false;
-          return true;
-        }
+if (currentView === 'notes') {
+  // 노트 화면: 노트가 있는 책만, 그리고 검색은 제목과 노트 내용에서
+  if (!b.note || b.note.trim() === '') return false;
+  if (F.search && !b.title.toLowerCase().includes(F.search) && !b.note.toLowerCase().includes(F.search)) return false;
+  return true;
+} else if (currentView === 'returns') {
+  // [추가] 반납 관리 화면: dueDate가 있는 책만 표시
+  if (!b.dueDate) return false;
+  if (F.search && !b.title.toLowerCase().includes(F.search) && !(b.author || '').toLowerCase().includes(F.search)) return false;
+  return true;
+} else {
+  // 전체 목록 화면: 기존 로직
+  F.library = document.getElementById('librarySelect').value;
+  F.genre   = document.getElementById('genreSelect').value;
+  
+  if (F.search  && !b.title.toLowerCase().includes(F.search) && !(b.author || '').toLowerCase().includes(F.search)) return false;
+  if (F.library && b.library !== F.library)    return false;
+  if (F.type    && b.type    !== F.type)       return false;
+  if (F.genre   && !b.genres.includes(F.genre)) return false;
+  if (F.status  && b.status  !== F.status)     return false;
+  return true;
+}
       });
       
-      const countEl = document.getElementById('bookCount');
-      if (currentView === 'notes') {
-        countEl.textContent = `노트 작성됨: ${result.length}권`;
-      } else {
-        const total = BOOKS.length;
-        if (F.search || F.library || F.type || F.genre || F.status) {
-          countEl.textContent = `검색 결과: ${result.length}권 / 총 ${total}권`;
-        } else {
-          countEl.textContent = `전체: ${total}권`;
-        }
-      }
-      renderBooks(result);
+const countEl = document.getElementById('bookCount');
+if (currentView === 'notes') {
+  countEl.textContent = `노트 작성됨: ${result.length}권`;
+} else if (currentView === 'returns') {
+  // [추가] 반납 관리 화면 카운트
+  countEl.textContent = `반납 관리: ${result.length}권`;
+} else {
+  const total = BOOKS.length;
+  if (F.search || F.library || F.type || F.genre || F.status) {
+    countEl.textContent = `검색 결과: ${result.length}권 / 총 ${total}권`;
+  } else {
+    countEl.textContent = `전체: ${total}권`;
+  }
+}
+renderBooks(result);
     }
 
     function toggleType(val) {
@@ -3615,6 +3682,8 @@
       document.getElementById('detailNote').value    = book.note || '';
       selectDetailType(book.type);
       document.getElementById('detailGenre').value = book.genres.length > 0 ? book.genres[0] : '';
+    // [추가] 기존 dueDate가 있는 책만 값 표시. 기존 266개 데이터는 일괄 수정하지 않음.
+      document.getElementById('detailDueDate').value = book.dueDate || '';
       selectDetailStatus(book.status);
       setDetailInputsEnabled(false);
 
@@ -3655,6 +3724,14 @@
       document.getElementById('detailBtnUnread')  .classList.toggle('active', val === '안읽음');
       document.getElementById('detailBtnReading') .classList.toggle('active', val === '읽는중');
       document.getElementById('detailBtnFinished').classList.toggle('active', val === '완독');
+        // [추가] '읽는중'일 때만 반납일자 입력창 표시
+        const dueWrap = document.getElementById('detailDueDateWrap');
+        const dueInput = document.getElementById('detailDueDate');
+        dueWrap.classList.toggle('hidden', val !== '읽는중');
+        // 읽는중이 아니면 화면 값은 비움. 실제 저장 시 해당 책의 dueDate도 제거됨.
+        if (val !== '읽는중') {
+              dueInput.value = '';
+            }
     }
 
     function setDetailInputsEnabled(enabled) {
@@ -3663,6 +3740,8 @@
       document.getElementById('detailLibraryInput').disabled = !enabled;
       document.getElementById('detailCallNo').disabled       = !enabled;
       document.getElementById('detailNote').disabled         = !enabled;
+        // [추가] 반납일자는 편집 모드이면서 상태가 '읽는중'일 때만 입력 가능
+        document.getElementById('detailDueDate').disabled = !enabled || currentDetailStatus !== '읽는중';
       // 편집 취소 시 입력창 숨기기
       if (!enabled) {
         document.getElementById('detailLibraryInput').classList.add('hidden');
@@ -3719,6 +3798,17 @@
       book.type = type; book.genres = type === '소설' && genre ? [genre] : [];
       book.status = currentDetailStatus;
 
+// [추가] 선택한 책에만 dueDate 동적 추가.
+// 기존 전체 데이터에는 dueDate를 일괄 생성하지 않음.
+const dueDate = document.getElementById('detailDueDate').value;
+
+if (currentDetailStatus === '읽는중' && dueDate) {
+  book.dueDate = dueDate;
+} else {
+  // 읽는중이 아니거나 날짜를 비운 경우, 현재 책의 반납일만 제거
+  delete book.dueDate;
+}
+      
       saveBooks();
       applyFilters();
       showMainScreenFromDetail();
@@ -3899,9 +3989,48 @@ history.pushState(null, '');
     // ═══════════════════════════════════════════════════════
       const countEl = document.getElementById('bookCount');
       countEl.textContent = `전체: ${BOOKS.length}권`;
- 
+ // [추가] 앱 초기 로딩 시 오늘/내일 반납 예정 도서 알림
+function notifyDueBooks() {
+  if (!('Notification' in window)) return;
+
+  const today = new Date();
+  const todayOnly = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+
+  const targets = BOOKS.filter(book => {
+    if (!book.dueDate) return false;
+
+    const dueOnly = parseLocalDate(book.dueDate);
+    const diffDays = Math.ceil((dueOnly - todayOnly) / (1000 * 60 * 60 * 24));
+
+    return diffDays === 0 || diffDays === 1;
+  });
+
+  if (targets.length === 0) return;
+
+  const showNotification = () => {
+    targets.forEach(book => {
+      const label = getDueDateLabel(book.dueDate);
+      new Notification('반납일 알림', {
+        body: `${book.title} - ${label === 'D-Day' ? '오늘 반납일입니다.' : '내일 반납일입니다.'}`,
+        icon: 'icon-192.png'
+      });
+    });
+  };
+
+  if (Notification.permission === 'granted') {
+    showNotification();
+  } else if (Notification.permission === 'default') {
+    Notification.requestPermission().then(permission => {
+      if (permission === 'granted') {
+        showNotification();
+      }
+    });
+  }
+}
     
     renderBooks(BOOKS);
+// [추가] 앱을 처음 열 때 반납일이 오늘/내일인 책 알림
+notifyDueBooks();    
   </script>
   <script>
     if ('serviceWorker' in navigator) {
