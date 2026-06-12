@@ -375,6 +375,8 @@
         <span class="text-[9px] text-gray-300">12</span>
       </div>
     </div>
+    <!-- 추가: 월별 완독 목록 영역 -->
+    <div id="monthlyDetail" class="hidden bg-white rounded-2xl px-5 py-4 shadow-sm flex flex-col"></div>
 
     <!-- 연도별 완독 차트 -->
     <div class="bg-white rounded-2xl px-5 py-4 shadow-sm">
@@ -382,6 +384,8 @@
       <div id="yearlyChart" class="flex items-end gap-2 h-32"></div>
       <div id="yearlyLabels" class="flex justify-between mt-1"></div>
     </div>
+    <!-- 추가: 연도별 완독 목록 영역 -->
+    <div id="yearlyDetail" class="hidden bg-white rounded-2xl px-5 py-4 shadow-sm flex flex-col"></div>
 
   </div>
 </div>
@@ -4195,6 +4199,9 @@ function renderStats() {
   renderYearlyChart();
 }
 
+// 추가: 현재 선택된 월 상태값 (null이면 목록 닫힘)
+let statsSelectedMonth = null;
+
 function renderMonthlyChart() {
   const finished = BOOKS.filter(b => b.status === '완독' && b.finishedDate);
 
@@ -4209,18 +4216,76 @@ function renderMonthlyChart() {
   const max = Math.max(...monthlyCounts, 1);
   const container = document.getElementById('monthlyChart');
   container.innerHTML = monthlyCounts.map((count, i) => `
-    <div class="flex flex-col items-center flex-1 gap-1">
+    <div class="flex flex-col items-center flex-1 gap-1" 
+         onclick="toggleMonthlyDetail(${i})"
+         style="cursor:pointer; padding-top:8px; padding-bottom:8px; margin-top:-8px; margin-bottom:-8px;">
       <span class="text-[9px] text-gray-400">${count > 0 ? count : ''}</span>
-      <div class="w-full rounded-t-md transition-all" style="height:${Math.max((count/max)*100, 4)}px; background:${count > 0 ? '#7B5EA7' : '#E5E7EB'};"></div>
+      <div class="w-full rounded-t-md transition-all" 
+           style="height:${Math.max((count/max)*100, 4)}px; 
+                  background:${statsSelectedMonth === i ? '#5B3E8A' : (count > 0 ? '#7B5EA7' : '#E5E7EB')};
+                  min-height:44px; box-sizing:content-box; margin-bottom:-40px;">
+      </div>
     </div>
   `).join('');
+
+  // 선택된 월 목록 유지
+  renderMonthlyDetail();
 }
+
+function toggleMonthlyDetail(monthIndex) {
+  // 같은 막대 다시 누르면 닫힘
+  if (statsSelectedMonth === monthIndex) {
+    statsSelectedMonth = null;
+  } else {
+    statsSelectedMonth = monthIndex;
+  }
+  renderMonthlyChart();
+}
+
+function renderMonthlyDetail() {
+  const container = document.getElementById('monthlyDetail');
+  if (statsSelectedMonth === null) {
+    container.classList.add('hidden');
+    return;
+  }
+
+  const monthNames = ['1월','2월','3월','4월','5월','6월','7월','8월','9월','10월','11월','12월'];
+  const finished = BOOKS.filter(b => {
+    if (b.status !== '완독' || !b.finishedDate) return false;
+    const d = new Date(b.finishedDate);
+    return d.getFullYear() === statsCurrentYear && d.getMonth() === statsSelectedMonth;
+  });
+
+  container.classList.remove('hidden');
+
+  if (finished.length === 0) {
+    container.innerHTML = `
+      <p class="text-xs font-bold text-gray-500 mb-2">${monthNames[statsSelectedMonth]} 완독 목록</p>
+      <p class="text-xs text-gray-300">완독한 책이 없어요</p>
+    `;
+    return;
+  }
+
+  container.innerHTML = `
+    <p class="text-xs font-bold text-gray-500 mb-1">${monthNames[statsSelectedMonth]} 완독 목록</p>
+    ${finished.map(b => `
+      <button onclick="goToBookFromStats('${b.title.replace(/'/g, "\\'")}')"
+              class="w-full text-left py-3 text-sm text-gray-700 font-medium border-b border-gray-100 touch-active last:border-0">
+        · ${b.title}
+      </button>
+    `).join('')}
+  `;
+}
+
+// 추가: 현재 선택된 연도 상태값 (null이면 목록 닫힘)
+let statsSelectedYear = null;
 
 function renderYearlyChart() {
   const finished = BOOKS.filter(b => b.status === '완독' && b.finishedDate);
   if (finished.length === 0) {
     document.getElementById('yearlyChart').innerHTML = '<p class="text-xs text-gray-300 w-full text-center">완독 데이터가 없어요</p>';
     document.getElementById('yearlyLabels').innerHTML = '';
+    document.getElementById('yearlyDetail').classList.add('hidden');
     return;
   }
 
@@ -4238,17 +4303,73 @@ function renderYearlyChart() {
 
   const max = Math.max(...yearlyCounts.map(y => y.count), 1);
   document.getElementById('yearlyChart').innerHTML = yearlyCounts.map(y => `
-    <div class="flex flex-col items-center flex-1 gap-1">
+    <div class="flex flex-col items-center flex-1 gap-1"
+         onclick="toggleYearlyDetail(${y.year})"
+         style="cursor:pointer; padding-top:8px; padding-bottom:8px; margin-top:-8px; margin-bottom:-8px;">
       <span class="text-[9px] text-gray-400">${y.count > 0 ? y.count : ''}</span>
-      <div class="w-full rounded-t-md" style="height:${Math.max((y.count/max)*100, 4)}px; background:${y.count > 0 ? '#7B5EA7' : '#E5E7EB'};"></div>
+      <div class="w-full rounded-t-md"
+           style="height:${Math.max((y.count/max)*100, 4)}px;
+                  background:${statsSelectedYear === y.year ? '#5B3E8A' : (y.count > 0 ? '#7B5EA7' : '#E5E7EB')};
+                  min-height:44px; box-sizing:content-box; margin-bottom:-40px;">
+      </div>
     </div>
   `).join('');
 
   document.getElementById('yearlyLabels').innerHTML = yearlyCounts.map(y =>
     `<span class="text-[9px] text-gray-300 flex-1 text-center">${y.year}</span>`
   ).join('');
+
+  // 선택된 연도 목록 유지
+  renderYearlyDetail();
 }
-    
+
+function toggleYearlyDetail(year) {
+  // 같은 막대 다시 누르면 닫힘
+  if (statsSelectedYear === year) {
+    statsSelectedYear = null;
+  } else {
+    statsSelectedYear = year;
+  }
+  renderYearlyChart();
+}
+
+function renderYearlyDetail() {
+  const container = document.getElementById('yearlyDetail');
+  if (statsSelectedYear === null) {
+    container.classList.add('hidden');
+    return;
+  }
+
+  const finished = BOOKS.filter(b => {
+    if (b.status !== '완독' || !b.finishedDate) return false;
+    return new Date(b.finishedDate).getFullYear() === statsSelectedYear;
+  });
+
+  container.classList.remove('hidden');
+
+  if (finished.length === 0) {
+    container.innerHTML = `
+      <p class="text-xs font-bold text-gray-500 mb-2">${statsSelectedYear}년 완독 목록</p>
+      <p class="text-xs text-gray-300">완독한 책이 없어요</p>
+    `;
+    return;
+  }
+
+  container.innerHTML = `
+    <p class="text-xs font-bold text-gray-500 mb-1">${statsSelectedYear}년 완독 목록</p>
+    ${finished.map(b => `
+      <button onclick="goToBookFromStats('${b.title.replace(/'/g, "\\'")}')"
+              class="w-full text-left py-3 text-sm text-gray-700 font-medium border-b border-gray-100 touch-active last:border-0">
+        · ${b.title}
+      </button>
+    `).join('')}
+  `;
+}
+    // 추가: 통계 목록에서 책 제목 누르면 상세 페이지로 이동
+function goToBookFromStats(title) {
+  changeView('all');
+  showDetailScreen(title);
+}
  // [추가] 앱 초기 로딩 시 오늘/내일 반납 예정 도서 알림
 // 추가: 오늘 기준 D-Day/D-1 책 중 완독 안 된 책이 있으면 뱃지 표시
 function updateBellBadge() {
