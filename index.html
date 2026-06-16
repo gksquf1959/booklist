@@ -188,6 +188,12 @@
       <div id="statsScreen" class="hidden flex-col flex-1 overflow-y-auto no-scrollbar bg-p-light">
         <div class="px-4 py-5 flex flex-col gap-4 pb-10">
 
+          <!-- 추가: 통계 검색 결과 영역 -->
+          <div id="statsSearchResult" class="hidden bg-white rounded-2xl px-5 py-2 shadow-sm flex flex-col"></div>
+
+          <!-- 추가: 차트 영역 래퍼 (검색 시 숨김) -->
+          <div id="statsCharts" class="flex flex-col gap-4">
+
           <!-- 전체 완독 수 -->
           <div class="bg-white rounded-2xl px-5 py-4 shadow-sm">
             <p class="text-xs text-gray-400 mb-1">전체 완독</p>
@@ -231,6 +237,9 @@
           </div>
           <!-- 연도별 완독 목록 영역 -->
           <div id="yearlyDetail" class="hidden bg-white rounded-2xl px-5 py-4 shadow-sm flex flex-col"></div>
+
+          </div>
+          <!-- statsCharts 끝 -->
 
         </div>
       </div>
@@ -3609,8 +3618,11 @@ function renderBooks(list) {
     }
 
 function applyFilters() {
-  // 추가: 통계 화면일 때는 책목록 필터링 실행 안 함
-  if (currentView === 'stats') return;
+  // 추가: 통계 화면일 때는 통계 전용 검색 실행
+  if (currentView === 'stats') {
+    searchStats();
+    return;
+  }
   F.search  = document.getElementById('searchInput').value.trim().toLowerCase();
       document.getElementById('searchClear').classList.toggle('hidden', F.search === '');
 
@@ -4208,6 +4220,50 @@ function changeStatsYear(dir) {
   renderMonthlyChart();
 }
 
+// 추가: 통계 화면 전용 검색
+function searchStats() {
+  const query = document.getElementById('searchInput').value.trim().toLowerCase();
+  const statsSearchResult = document.getElementById('statsSearchResult');
+  const statsCharts = document.getElementById('statsCharts');
+
+  if (query === '') {
+    // 검색어 없으면 차트 표시, 검색결과 숨김
+    statsSearchResult.classList.add('hidden');
+    statsCharts.classList.remove('hidden');
+    return;
+  }
+
+  // 완독 + finishedDate 있는 책 중 검색어 포함된 책
+  const result = BOOKS.filter(b =>
+    b.status === '완독' && b.finishedDate &&
+    b.title.toLowerCase().includes(query)
+  );
+
+  // 차트 숨기고 검색결과 표시
+  statsCharts.classList.add('hidden');
+  statsSearchResult.classList.remove('hidden');
+
+  if (result.length === 0) {
+    statsSearchResult.innerHTML = '<p class="text-xs text-gray-300 text-center py-4">검색 결과가 없어요</p>';
+    return;
+  }
+
+  statsSearchResult.innerHTML = result.map(b => {
+    // finishedDate를 "26년 6월" 형태로 변환
+    const d = new Date(b.finishedDate);
+    const dateLabel = `${String(d.getFullYear()).slice(2)}년 ${d.getMonth() + 1}월`;
+    return `
+      <div class="flex items-center justify-between py-3 border-b border-gray-100 last:border-0">
+        <button onclick="goToBookFromStats('${b.title.replace(/'/g, "\\'")}')"
+                class="text-sm text-gray-700 font-medium text-left touch-active flex-1">
+          · ${b.title}
+        </button>
+        <span class="text-xs text-gray-400 ml-2 shrink-0">${dateLabel}</span>
+      </div>
+    `;
+  }).join('');
+}
+    
 function renderStats() {
   const finished = BOOKS.filter(b => b.status === '완독' && b.finishedDate);
 
@@ -4327,9 +4383,10 @@ function renderYearlyChart() {
 
   const max = Math.max(...yearlyCounts.map(y => y.count), 1);
   document.getElementById('yearlyChart').innerHTML = yearlyCounts.map(y => `
-    <div class="flex flex-col items-center flex-1 gap-1"
+    <div class="flex flex-col items-center gap-1"
          onclick="toggleYearlyDetail(${y.year})"
-         style="cursor:pointer; padding-top:8px; padding-bottom:8px; margin-top:-8px; margin-bottom:-8px;">
+         style="cursor:pointer; padding-top:8px; padding-bottom:8px; margin-top:-8px; margin-bottom:-8px;
+                flex: 0 0 auto; width: clamp(30px, calc(100% / ${Math.max(yearlyCounts.length, 4)}), 80px);">
       <span class="text-[9px] text-gray-400">${y.count > 0 ? y.count : ''}</span>
       <div class="w-full rounded-t-md"
            style="height:${Math.max((y.count/max)*100, 4)}px;
