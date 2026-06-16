@@ -455,6 +455,8 @@
   </div>
 </div>
     <div id="toast" class="hidden fixed bottom-10 left-1/2 -translate-x-1/2 bg-gray-800 text-white text-sm px-5 py-2.5 rounded-full z-[999]">한 번 더 누르면 종료됩니다</div>
+    <!-- 추가: 중복 책 감지 토스트 -->
+    <div id="dupToast" class="hidden fixed bottom-36 left-1/2 -translate-x-1/2 bg-red-500 text-white text-sm px-4 py-2 rounded-2xl shadow-lg z-50 max-w-xs text-center"></div>
     </div>
 
   <script>
@@ -3372,6 +3374,34 @@
     // ═══════════════════════════════════════════════════════
     //  localStorage 연동 및 상태
     // ═══════════════════════════════════════════════════════
+
+    // 추가: 중복 제목 감지 함수
+function checkDuplicateBooks(books) {
+  const titleCount = {};
+  books.forEach(b => {
+    const key = b.title.trim().replace(/\s+/g, '');
+    titleCount[key] = (titleCount[key] || 0) + 1;
+  });
+
+  // 2번 이상 등록된 제목 찾기
+  const duplicates = books
+    .filter(b => titleCount[b.title.trim().replace(/\s+/g, '')] > 1)
+    .map(b => b.title)
+    .filter((v, i, arr) => arr.indexOf(v) === i); // 중복 제거해서 제목만
+
+  if (duplicates.length === 0) return;
+
+  // 토스트 메시지 표시 (앱 로딩 후 약간 딜레이)
+  setTimeout(() => {
+    const toast = document.getElementById('dupToast');
+    if (toast) {
+      toast.textContent = `⚠️ 중복 등록된 책이 있어요: ${duplicates.join(', ')}`;
+      toast.classList.remove('hidden');
+      setTimeout(() => toast.classList.add('hidden'), 5000); // 5초 후 사라짐
+    }
+  }, 1000);
+}
+    
     function loadBooks() {
       const saved = localStorage.getItem('BOOKS');
       if (saved) {
@@ -3382,8 +3412,12 @@
           if (newBooks.length > 0) {
             const merged = [...savedBooks, ...newBooks];
             localStorage.setItem('BOOKS', JSON.stringify(merged));
+            // 추가: 중복 제목 감지 후 토스트 알림
+            checkDuplicateBooks(merged);
             return merged;
           }
+          // 추가: 중복 제목 감지 후 토스트 알림
+          checkDuplicateBooks(savedBooks);
           return savedBooks;
         } catch(e) {}
       }
@@ -3773,6 +3807,14 @@ function showMainScreenFromDetail() {
       const genre   = document.getElementById('addGenre').value;
 
       if (!title)                           { alert('책 제목을 입력해주세요.'); return; }
+            // 추가: 띄어쓰기 무시하고 중복 체크
+      const isDuplicate = BOOKS.some(b =>
+        b.title.trim().replace(/\s+/g, '') === title.replace(/\s+/g, '')
+      );
+      if (isDuplicate) {
+        alert(`이미 등록된 책이에요.\n"${title}"`);
+        return;
+      }
       if (type === '소설' && !genre)        { alert('장르를 선택해주세요.'); return; }
       if (!library)                         { alert('소장 도서관을 선택해주세요.'); return; }
       if (!callNo)                          { alert('위치 번호를 입력해주세요.'); return; }
