@@ -3431,6 +3431,8 @@ function changeView(view) {
   const btnAll = document.getElementById('menuBtnAll');
   const btnNotes = document.getElementById('menuBtnNotes');
   const btnReturns = document.getElementById('menuBtnReturns'); // [추가] 반납 관리 메뉴 버튼
+  // 추가: 통계 버튼도 변수로 선언해서 다른 탭 선택 시 초기화
+  const btnStats = document.getElementById('menuBtnStats');
   const filterArea = document.getElementById('filterArea');
   const searchInput = document.getElementById('searchInput');
   const mainTitle = document.getElementById('mainTitle');
@@ -3439,6 +3441,8 @@ function changeView(view) {
     btnAll.className = 'text-left px-4 py-3 rounded-xl font-bold touch-active bg-p-light text-p-main';
     btnNotes.className = 'text-left px-4 py-3 rounded-xl font-bold touch-active text-gray-600 hover:bg-gray-50';
     btnReturns.className = 'text-left px-4 py-3 rounded-xl font-bold touch-active text-gray-600 hover:bg-gray-50'; // [추가]
+    // 추가: 통계 버튼 비활성화 색상으로 초기화
+    btnStats.className = 'text-left px-4 py-3 rounded-xl font-bold touch-active text-gray-600 hover:bg-gray-50';
     filterArea.classList.remove('hidden');
     searchInput.placeholder = '제목 또는 지은이 검색';
     mainTitle.textContent = 'To Read List 📚';
@@ -3446,6 +3450,8 @@ function changeView(view) {
     btnAll.className = 'text-left px-4 py-3 rounded-xl font-bold touch-active text-gray-600 hover:bg-gray-50';
     btnNotes.className = 'text-left px-4 py-3 rounded-xl font-bold touch-active bg-p-light text-p-main';
     btnReturns.className = 'text-left px-4 py-3 rounded-xl font-bold touch-active text-gray-600 hover:bg-gray-50'; // [추가]
+    // 추가: 통계 버튼 비활성화 색상으로 초기화
+    btnStats.className = 'text-left px-4 py-3 rounded-xl font-bold touch-active text-gray-600 hover:bg-gray-50';
     filterArea.classList.add('hidden'); // 필터 영역 숨김
     searchInput.placeholder = '제목 또는 노트 내용 검색';
     mainTitle.textContent = '독서 노트 📝';
@@ -3454,6 +3460,8 @@ function changeView(view) {
     btnAll.className = 'text-left px-4 py-3 rounded-xl font-bold touch-active text-gray-600 hover:bg-gray-50';
     btnNotes.className = 'text-left px-4 py-3 rounded-xl font-bold touch-active text-gray-600 hover:bg-gray-50';
     btnReturns.className = 'text-left px-4 py-3 rounded-xl font-bold touch-active bg-p-light text-p-main';
+    // 추가: 통계 버튼 비활성화 색상으로 초기화
+    btnStats.className = 'text-left px-4 py-3 rounded-xl font-bold touch-active text-gray-600 hover:bg-gray-50';
     filterArea.classList.add('hidden'); // 반납 관리에서는 필터 영역 숨김
     searchInput.placeholder = '제목 또는 지은이 검색';
     mainTitle.textContent = '반납 관리 🔔';
