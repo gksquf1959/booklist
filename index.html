@@ -337,7 +337,7 @@
           <button onclick="confirmDeletePrompt()" class="w-full py-4 rounded-2xl text-white text-xl font-bold shadow-lg tracking-wide bg-red-500 touch-active">삭제</button>
         </div>
       </div>
-    </div>
+
 
 <!-- 추가: 독서 통계 페이지 -->
 <div id="statsScreen" class="hidden flex-col h-screen bg-p-light">
@@ -388,6 +388,7 @@
     <div id="yearlyDetail" class="hidden bg-white rounded-2xl px-5 py-4 shadow-sm flex flex-col"></div>
 
   </div>
+</div>
 </div>
   
     <!-- 백업 모달 -->
@@ -3467,16 +3468,13 @@ function changeView(view) {
   }
   // 추가: stats일 때는 통계 화면 표시, 나머지는 숨김
   const statsScreen = document.getElementById('statsScreen');
-  const mainScreen  = document.getElementById('mainScreen');
   if (view === 'stats') {
     statsScreen.classList.remove('hidden');
     statsScreen.classList.add('flex');
-    mainScreen.classList.add('hidden'); // 추가: 책목록 화면 숨김
     renderStats();
   } else {
     statsScreen.classList.add('hidden');
     statsScreen.classList.remove('flex');
-    mainScreen.classList.remove('hidden'); // 추가: 책목록 화면 다시 표시
   }
   
   document.getElementById('searchInput').value = '';
@@ -4150,12 +4148,9 @@ window.addEventListener('popstate', () => {
   } else if (addVisible) {
     showMainScreen();
   // ↓ 수정 추가: 책목록이 아닌 다른 탭(노트/반납관리)에 있을 때는 책목록으로 돌아감
-  } else if (currentView !== 'all') {
-    history.pushState(null, ''); // 히스토리 유지 (다시 뒤로가기 눌러도 종료 안 됨)
+ } else if (currentView !== 'all') {
+    history.pushState(null, '');
     changeView('all');
-    // 추가: stats 뷰에서 뒤로가기 시 통계 화면 숨김
-    document.getElementById('statsScreen').classList.add('hidden');
-    document.getElementById('statsScreen').classList.remove('flex');    
   } else {
     if (backPressedOnce) {
       history.back();
