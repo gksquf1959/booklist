@@ -3375,7 +3375,7 @@
     //  localStorage 연동 및 상태
     // ═══════════════════════════════════════════════════════
 
-// 추가: 중복 제목 감지 함수 (완전일치 + 부분일치)
+// 추가: 중복 제목 감지 함수 (완전일치 + 5글자 이상 부분일치)
 function checkDuplicateBooks(books) {
   const duplicates = [];
 
@@ -3384,8 +3384,15 @@ function checkDuplicateBooks(books) {
     books.forEach((other, j) => {
       if (i >= j) return; // 같은 쌍을 두 번 비교하지 않음
       const keyB = other.title.trim().replace(/\s+/g, '');
-      // 완전일치 또는 부분일치 감지
-      if (keyA === keyB || keyA.includes(keyB) || keyB.includes(keyA)) {
+      // 완전일치 감지
+      if (keyA === keyB) {
+        const pair = `"${book.title}" / "${other.title}"`;
+        if (!duplicates.includes(pair)) duplicates.push(pair);
+        return;
+      }
+      // 부분일치 감지 (짧은 쪽이 5글자 이상일 때만)
+      const shorter = keyA.length <= keyB.length ? keyA : keyB;
+      if (shorter.length >= 5 && (keyA.includes(keyB) || keyB.includes(keyA))) {
         const pair = `"${book.title}" / "${other.title}"`;
         if (!duplicates.includes(pair)) duplicates.push(pair);
       }
