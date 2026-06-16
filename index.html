@@ -3807,13 +3807,14 @@ function showMainScreenFromDetail() {
       const genre   = document.getElementById('addGenre').value;
 
       if (!title)                           { alert('책 제목을 입력해주세요.'); return; }
-            // 추가: 띄어쓰기 무시하고 중복 체크
-      const isDuplicate = BOOKS.some(b =>
-        b.title.trim().replace(/\s+/g, '') === title.replace(/\s+/g, '')
+      // 추가: 띄어쓰기 무시하고 중복 체크
+      const similarBook = BOOKS.find(b =>
+        b.title.trim().replace(/\s+/g, '').includes(title.replace(/\s+/g, '')) ||
+        title.replace(/\s+/g, '').includes(b.title.trim().replace(/\s+/g, ''))
       );
-      if (isDuplicate) {
-        alert(`이미 등록된 책이에요.\n"${title}"`);
-        return;
+      if (similarBook) {
+        const proceed = confirm(`비슷한 책이 있어요.\n"${similarBook.title}"\n그래도 등록할까요?`);
+        if (!proceed) return;
       }
       if (type === '소설' && !genre)        { alert('장르를 선택해주세요.'); return; }
       if (!library)                         { alert('소장 도서관을 선택해주세요.'); return; }
