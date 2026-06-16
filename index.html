@@ -3521,7 +3521,9 @@ function getDueDateLabel(dueDate) {
     //  렌더링
     // ═══════════════════════════════════════════════════════
     
-    function renderBooks(list) {
+function renderBooks(list) {
+      // 추가: 통계 화면일 때는 책목록 렌더링 실행 안 함
+      if (currentView === 'stats') return;
       const container = document.getElementById('bookList');
       const emptyMsg  = document.getElementById('emptyMsg');
       container.innerHTML = '';
@@ -3598,8 +3600,10 @@ function getDueDateLabel(dueDate) {
       }
     }
 
-    function applyFilters() {
-      F.search  = document.getElementById('searchInput').value.trim().toLowerCase();
+function applyFilters() {
+  // 추가: 통계 화면일 때는 책목록 필터링 실행 안 함
+  if (currentView === 'stats') return;
+  F.search  = document.getElementById('searchInput').value.trim().toLowerCase();
       document.getElementById('searchClear').classList.toggle('hidden', F.search === '');
 
       const result = BOOKS.filter(b => {
