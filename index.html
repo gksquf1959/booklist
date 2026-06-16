@@ -3468,13 +3468,24 @@ function changeView(view) {
   }
   // 추가: stats일 때는 통계 화면 표시, 나머지는 숨김
   const statsScreen = document.getElementById('statsScreen');
+  const bookList    = document.getElementById('bookList');
+  const bookCount   = document.getElementById('bookCount');
+  const emptyMsg    = document.getElementById('emptyMsg');
+
   if (view === 'stats') {
+    // 통계 화면 표시, 책목록 영역 숨김
     statsScreen.classList.remove('hidden');
     statsScreen.classList.add('flex');
+    bookList.classList.add('hidden');
+    bookCount.classList.add('hidden');
+    emptyMsg.classList.add('hidden');
     renderStats();
   } else {
+    // 통계 화면 숨김, 책목록 영역 복원
     statsScreen.classList.add('hidden');
     statsScreen.classList.remove('flex');
+    bookList.classList.remove('hidden');
+    bookCount.classList.remove('hidden');
   }
   
   document.getElementById('searchInput').value = '';
