@@ -3375,19 +3375,22 @@
     //  localStorage 연동 및 상태
     // ═══════════════════════════════════════════════════════
 
-    // 추가: 중복 제목 감지 함수
+// 추가: 중복 제목 감지 함수 (완전일치 + 부분일치)
 function checkDuplicateBooks(books) {
-  const titleCount = {};
-  books.forEach(b => {
-    const key = b.title.trim().replace(/\s+/g, '');
-    titleCount[key] = (titleCount[key] || 0) + 1;
-  });
+  const duplicates = [];
 
-  // 2번 이상 등록된 제목 찾기
-  const duplicates = books
-    .filter(b => titleCount[b.title.trim().replace(/\s+/g, '')] > 1)
-    .map(b => b.title)
-    .filter((v, i, arr) => arr.indexOf(v) === i); // 중복 제거해서 제목만
+  books.forEach((book, i) => {
+    const keyA = book.title.trim().replace(/\s+/g, '');
+    books.forEach((other, j) => {
+      if (i >= j) return; // 같은 쌍을 두 번 비교하지 않음
+      const keyB = other.title.trim().replace(/\s+/g, '');
+      // 완전일치 또는 부분일치 감지
+      if (keyA === keyB || keyA.includes(keyB) || keyB.includes(keyA)) {
+        const pair = `"${book.title}" / "${other.title}"`;
+        if (!duplicates.includes(pair)) duplicates.push(pair);
+      }
+    });
+  });
 
   if (duplicates.length === 0) return;
 
@@ -3395,7 +3398,7 @@ function checkDuplicateBooks(books) {
   setTimeout(() => {
     const toast = document.getElementById('dupToast');
     if (toast) {
-      toast.textContent = `⚠️ 중복 등록된 책이 있어요: ${duplicates.join(', ')}`;
+      toast.textContent = `⚠️ 비슷한 책이 있어요: ${duplicates.join(' / ')}`;
       toast.classList.remove('hidden');
       setTimeout(() => toast.classList.add('hidden'), 5000); // 5초 후 사라짐
     }
