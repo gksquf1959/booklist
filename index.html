@@ -3694,7 +3694,46 @@ if (currentView === 'notes') {
   return true;
 }
       });
-      
+
+      // ===== 추가: 전체 목록 / 반납 관리 화면에서 읽는중 → 안읽음 → 완독 순으로 정렬 =====
+      if (currentView === 'all' || currentView === 'returns') {
+        // 그룹 번호 매기기: 읽는중=1, 안읽음=2, 완독=3, 그 외 상태=2(안읽음과 동일 취급)
+        const statusGroup = (status) => {
+          if (status === '읽는중') return 1;
+          if (status === '완독')   return 3;
+          return 2; // 안읽음 및 기타
+        };
+
+        result.sort((a, b) => {
+          const groupA = statusGroup(a.status);
+          const groupB = statusGroup(b.status);
+
+          // 1) 그룹이 다르면 그룹 순서대로 (읽는중 → 안읽음 → 완독)
+          if (groupA !== groupB) return groupA - groupB;
+
+          // 2) 같은 그룹 안에서의 세부 정렬
+          if (groupA === 1) {
+            // 읽는중: 반납일(dueDate) 오름차순. 반납일 없는 책은 맨 뒤로
+            if (!a.dueDate && !b.dueDate) return 0;
+            if (!a.dueDate) return 1;
+            if (!b.dueDate) return -1;
+            return new Date(a.dueDate) - new Date(b.dueDate);
+          }
+
+          if (groupA === 3) {
+            // 완독: 완독일(finishedDate) 오름차순. 완독일 없는 책은 맨 뒤로
+            if (!a.finishedDate && !b.finishedDate) return 0;
+            if (!a.finishedDate) return 1;
+            if (!b.finishedDate) return -1;
+            return new Date(a.finishedDate) - new Date(b.finishedDate);
+          }
+
+          // 안읽음(그룹 2): 기존 순서 그대로 유지
+          return 0;
+        });
+      }
+      // ===== 정렬 추가 끝 =====
+
 const countEl = document.getElementById('bookCount');
 if (currentView === 'notes') {
   countEl.textContent = `노트 작성됨: ${result.length}권`;
