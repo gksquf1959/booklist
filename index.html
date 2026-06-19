@@ -4617,9 +4617,13 @@ function notifyDueBooks() {
   }
 }
     
-    renderBooks(BOOKS);
+    applyFilters();
+    // 수정: renderBooks(BOOKS) → applyFilters()로 변경
+    // 이유: renderBooks(BOOKS)는 정렬/필터를 거치지 않은 원본 순서를 그대로 그려서
+    //       새로고침할 때마다 정렬이 깨지는 원인이었음.
+    //       applyFilters()를 쓰면 검색/필터링 + 우리가 추가한 정렬 로직까지 모두 거쳐서 화면에 그려짐.
 // [추가] 앱을 처음 열 때 반납일이 오늘/내일인 책 알림
-notifyDueBooks();    
+notifyDueBooks();
   </script>
   <script>
     if ('serviceWorker' in navigator) {
